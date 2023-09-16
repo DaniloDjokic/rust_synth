@@ -7,7 +7,9 @@ use cpal::traits::{StreamTrait, DeviceTrait};
 
 mod stream_writer;
 
-pub fn run_stream(device: &Device, sample_format: SampleFormat, config: &StreamConfig, next_value: Box<dyn FnMut() -> f32 + Send + 'static>) -> Result<(), anyhow::Error> 
+pub fn run_stream<F>(device: &Device, sample_format: SampleFormat, config: &StreamConfig, next_value: F) -> Result<(), anyhow::Error> 
+where
+    F : FnMut() -> f32 + Send + 'static
 {
     let stream = match sample_format {
         //SampleFormat::I8 => build_stream::<i8>(&device, &config),
@@ -18,7 +20,7 @@ pub fn run_stream(device: &Device, sample_format: SampleFormat, config: &StreamC
         // SampleFormat::U16 => build_stream::<u16, F>(&device, &config, &mut next_value),
         // SampleFormat::U32 => build_stream::<u32, F>(&device, &config, &mut next_value),
         // SampleFormat::U64 => build_stream::<u64, F>(&device, &config, &mut next_value),
-        SampleFormat::F32 => build_stream::<f32>(&device, &config, next_value),
+        SampleFormat::F32 => build_stream::<f32, _>(&device, &config, next_value),
         // SampleFormat::F64 => build_stream::<f64, F>(&device, &config, &mut next_value),
          _ => panic!("Unsupported sample format"),
     }?; //error handling
@@ -30,9 +32,10 @@ pub fn run_stream(device: &Device, sample_format: SampleFormat, config: &StreamC
     Ok(())
 }
 
-fn build_stream<T>(device: &Device, config: &StreamConfig, mut next_value: Box<dyn FnMut() -> f32 + Send + 'static>) -> Result<Stream, anyhow::Error>
+fn build_stream<T, F>(device: &Device, config: &StreamConfig, mut next_value: F) -> Result<Stream, anyhow::Error>
 where 
     T: SizedSample + FromSample<f32>,
+    F: FnMut() -> f32 + Send + 'static
 {
     let channels = config.channels as usize;
 

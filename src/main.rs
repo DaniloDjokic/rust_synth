@@ -16,5 +16,5 @@ fn main() {
         (sample_clock * 440.0 * 2.0 * std::f32::consts::PI / sample_rate).sin()
     };
 
-    let _ = output_stream::run_stream(&device, sample_format, &config, Box::new(next_value));
+    let _ = output_stream::run_stream(&device, sample_format, &config, next_value);
 }

@@ -1,4 +1,5 @@
 mod note_listener;
+mod note_config;
 use std::sync::mpsc::{self, Receiver};
 
 use note_listener::NoteListener;

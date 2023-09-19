@@ -1,24 +1,33 @@
 use std::thread::{self, JoinHandle};
 use std::sync::mpsc::{self, Sender, SyncSender};
-use rdev::{listen, Event, EventType};
+use rdev::{listen, Event, EventType, Key};
+use super::note_config;
+
 pub struct NoteListener{
-    pressed_key: bool,
+    pressed_key: Option<Key>,
     sender: SyncSender<f32>,
 }
 
 impl NoteListener {
     pub fn new(sender: SyncSender<f32>) -> Self {
-        Self { pressed_key: false, sender: sender }
+        Self { pressed_key: None, sender: sender }
     }
 
     pub fn start_listen(mut self) -> JoinHandle<()> {
         thread::spawn(move || {
             let (tx, rx) = mpsc::channel();
 
-            NoteListener::foo(tx);
+            NoteListener::listen(tx);
 
             loop {
-                let val = if self.pressed_key { 440.0 } else { 220.0 };
+                let val = match self.pressed_key {
+                    Some(key) => match note_config::get_frequency(key) {
+                        Some(freq) => freq,
+                        None => 0.0f32
+                    }
+                    None => 0.0f32
+                };
+
                 self.sender.send(val).unwrap();
 
                 if let Ok(press) = rx.try_recv() {
@@ -28,17 +37,15 @@ impl NoteListener {
         })
     }
 
-    fn foo(sender: Sender<bool>) {
-        let callback = move |event: Event| {
-            match event.event_type {
-                EventType::KeyPress(key) => sender.send(true).unwrap(),
-                EventType::KeyRelease(key) => sender.send(false).unwrap(),
-                _ => (),
-            }
-        };
-
+    fn listen(sender: Sender<Option<Key>>) {
         thread::spawn(move || {
-            if let Err(e) = listen(callback) {
+            if let Err(e) = listen(move |event: Event| {
+                match event.event_type {
+                    EventType::KeyPress(key) => sender.send(Some(key)).unwrap(),
+                    EventType::KeyRelease(_key) => sender.send(None).unwrap(),
+                    _ => (),
+                }
+            }) {
                 println!("{:?}", e);
             }
         });

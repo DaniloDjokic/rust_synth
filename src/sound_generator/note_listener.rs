@@ -4,13 +4,13 @@ use rdev::{listen, Event, EventType, Key};
 use super::note_config;
 
 pub struct NoteListener{
-    pressed_key: Option<Key>,
-    sender: SyncSender<f32>,
+    pressed_keys: Vec<Key>,
+    sender: SyncSender<Vec<f32>>,
 }
 
 impl NoteListener {
-    pub fn new(sender: SyncSender<f32>) -> Self {
-        Self { pressed_key: None, sender: sender }
+    pub fn new(sender: SyncSender<Vec<f32>>) -> Self {
+        Self { pressed_keys: Vec::new(), sender: sender }
     }
 
     pub fn start_listen(mut self) -> JoinHandle<()> {
@@ -20,29 +20,30 @@ impl NoteListener {
             NoteListener::listen(tx);
 
             loop {
-                let val = match self.pressed_key {
-                    Some(key) => match note_config::get_frequency(key) {
-                        Some(freq) => freq,
-                        None => 0.0f32
-                    }
-                    None => 0.0f32
-                };
-
-                self.sender.send(val).unwrap();
-
                 if let Ok(press) = rx.try_recv() {
-                    self.pressed_key = press;
+                    match press {
+                        EventType::KeyPress(key) => self.pressed_keys.push(key),
+                        EventType::KeyRelease(key) => self.pressed_keys.retain(|&x| x != key),
+                        _ => ()
+                    };
                 }
+
+                let return_value: Vec<f32> = self.pressed_keys
+                    .iter()
+                    .filter_map(|x| note_config::get_frequency(*x))
+                    .collect();
+
+                self.sender.send(return_value).unwrap();                
             }
         })
     }
 
-    fn listen(sender: Sender<Option<Key>>) {
+    fn listen(sender: Sender<EventType>) {
         thread::spawn(move || {
             if let Err(e) = listen(move |event: Event| {
                 match event.event_type {
-                    EventType::KeyPress(key) => sender.send(Some(key)).unwrap(),
-                    EventType::KeyRelease(_key) => sender.send(None).unwrap(),
+                    EventType::KeyPress(key) => sender.send(EventType::KeyPress(key)).unwrap(),
+                    EventType::KeyRelease(key) => sender.send(EventType::KeyRelease(key)).unwrap(),
                     _ => (),
                 }
             }) {

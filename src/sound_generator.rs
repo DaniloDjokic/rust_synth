@@ -7,7 +7,7 @@ use note_listener::NoteListener;
 pub struct SampleGenerator {
     sample_rate: f32,
     clock: f32,
-    receiver: Receiver<f32>,
+    receiver: Receiver<Vec<f32>>,
 }
 
 impl SampleGenerator {
@@ -28,6 +28,7 @@ impl Iterator for SampleGenerator {
         self.clock = (self.clock + 1.0) % self.sample_rate;
 
         let hz = self.receiver.recv().unwrap();
+        let hz: f32 = hz.iter().sum();
 
         let next_sample = (self.clock * hz * 2.0 * std::f32::consts::PI / self.sample_rate).sin();
 

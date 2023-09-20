@@ -22,7 +22,11 @@ impl NoteListener {
             loop {
                 if let Ok(press) = rx.try_recv() {
                     match press {
-                        EventType::KeyPress(key) => self.pressed_keys.push(key),
+                        EventType::KeyPress(key) => {
+                            if !self.pressed_keys.contains(&key) { 
+                                self.pressed_keys.push(key)
+                            }
+                        },
                         EventType::KeyRelease(key) => self.pressed_keys.retain(|&x| x != key),
                         _ => ()
                     };

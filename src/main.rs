@@ -12,7 +12,11 @@ fn main() {
     let sample_format = supported_config.sample_format();
     let config = supported_config.config();
 
-    let generator = SampleGenerator::new(config.sample_rate.0 as f32);
+    let generator = SampleGenerator::new(
+        config.sample_rate.0 as u16, 
+        0.5,
+        sound_generator::waves::WaveType::Square
+    );
 
     let _ = OutputStream::new(sample_format)
         .build(&device, &config, generator)

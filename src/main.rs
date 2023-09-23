@@ -15,6 +15,7 @@ fn main() {
     let generator = SampleGenerator::new(
         config.sample_rate.0 as u16, 
         0.5,
+        4,
         sound_generator::waves::WaveType::Square
     );
 

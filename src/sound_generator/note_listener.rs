@@ -13,7 +13,7 @@ impl NoteListener {
         Self { pressed_keys: Vec::new(), sender: sender }
     }
 
-    pub fn start_listen(mut self) -> JoinHandle<()> {
+    pub fn start_listen(mut self, octave: usize) -> JoinHandle<()> {
         thread::spawn(move || {
             let (tx, rx) = mpsc::channel();
 
@@ -34,7 +34,7 @@ impl NoteListener {
 
                 let return_value: Vec<f32> = self.pressed_keys
                     .iter()
-                    .filter_map(|x| note_config::get_frequency(*x))
+                    .filter_map(|x| note_config::get_frequency(*x, octave))
                     .collect();
 
                 self.sender.send(return_value).unwrap();                

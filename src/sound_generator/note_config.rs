@@ -1,12 +1,13 @@
 use rdev::Key;
 
+#[derive(Debug)]
 pub enum Note {
     C, Cs, C1, D, Ds, _Db,
     E, _Eb, F, Fs, G, Gs, _Gb,
     A, As, _Ab, B, _Bb,
 }
 
-pub fn get_frequency(key: Key) -> Option<f32> {
+pub fn get_frequency(key: Key, octave: usize) -> Option<f32> {
     let key = match key {
         Key::KeyZ => Some(Note::C),
         Key::KeyS => Some(Note::Cs),
@@ -25,14 +26,14 @@ pub fn get_frequency(key: Key) -> Option<f32> {
     };
 
     match key {
-        Some(note) => Some(get_note_frequency(note, 4)),
+        Some(note) => Some(get_note_frequency(note, octave)),
         None => None
     }
 }
 
 fn get_note_frequency(note: Note, octave: usize) -> f32 {
     let base_freq = get_note_base_frequency(note);
-
+    
     base_freq * 2.0 * octave as f32
 }
 

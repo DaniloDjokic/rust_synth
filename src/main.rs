@@ -16,7 +16,7 @@ fn main() {
         config.sample_rate.0 as u16, 
         0.5,
         4,
-        sound_generator::oscilator::Oscilator::Triangle
+        sound_generator::oscilator::Oscilator::DigitalSaw
     );
 
     let _ = OutputStream::new(sample_format)

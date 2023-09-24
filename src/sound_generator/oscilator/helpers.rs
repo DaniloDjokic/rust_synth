@@ -10,3 +10,4 @@ impl Radian for f32 {
 
 pub const SQUARE_WAVE_AMPLITUDE_FACTOR: f32 = 0.2;
 pub const TRIANGLE_WAVE_AMPLITUDE_FACTOR: f32 = 0.6;
+pub const SAW_WAVE_AMPLITUDE_FACTOR: f32 = 0.6;

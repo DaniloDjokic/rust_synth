@@ -1,20 +1,21 @@
 mod note_listener;
 mod note_config;
-pub mod waves;
+pub mod oscilator;
 
 use std::sync::mpsc::{self, Receiver};
 use note_listener::NoteListener;
+use oscilator::Oscilator;
 
 pub struct SampleGenerator {
     clock: f32,
     time_step: f32,
     amplitude: f32,
     receiver: Receiver<Vec<f32>>,
-    wave: waves::WaveType
+    oscilator: Oscilator
 }
 
 impl SampleGenerator {
-    pub fn new(sample_rate: u16, amplitude: f32, octave: usize, wave: waves::WaveType) -> Self {
+    pub fn new(sample_rate: u16, amplitude: f32, octave: usize, oscilator: Oscilator) -> Self {
         let time_step = 1.0 / sample_rate as f32;
 
         let (tx, rx) = mpsc::sync_channel(2);
@@ -27,7 +28,7 @@ impl SampleGenerator {
             time_step: time_step,
             clock: 1.0, 
             receiver: rx,
-            wave: wave
+            oscilator
         }
     }
 }
@@ -38,32 +39,10 @@ impl Iterator for SampleGenerator {
     fn next(&mut self) -> Option<Self::Item> {
         let hz = self.receiver.recv().unwrap();
 
-        let next_sample = match self.wave {
-            waves::WaveType::Sine => calc_sine_wave_sample(self.amplitude, self.clock, hz),
-            waves::WaveType::Square => calc_square_wave_sample(self.amplitude, self.clock, hz)
-        }; 
+        let next_sample = self.oscilator.calc_next_sample(self.amplitude, self.clock, hz);
 
         self.clock += self.time_step;
 
         Some(next_sample)
-    }
-}
-
-fn calc_sine_wave_sample(amplitude: f32, clock: f32, hz: Vec<f32>) -> f32 {
-    amplitude * hz.iter()
-    .map(|h| {
-        (clock * h * 2.0 * std::f32::consts::PI).sin()
-    })
-    .sum::<f32>()
-}
-
-fn calc_square_wave_sample(amplitude: f32, clock: f32, hz: Vec<f32>) -> f32 {
-    let sine = calc_sine_wave_sample(amplitude, clock, hz);
-
-    if sine > 0.0 { 
-        amplitude / waves::SQUARE_WAVE_AMPLITUDE_FACTOR 
-    } 
-    else { 
-        -amplitude / waves::SQUARE_WAVE_AMPLITUDE_FACTOR 
     }
 }

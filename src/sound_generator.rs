@@ -1,17 +1,19 @@
 mod note_listener;
 mod note_config;
 pub mod oscilator;
+mod adsr_envelope;
 
-use std::sync::mpsc::{self, Receiver};
+use std::sync::{mpsc::{self, Receiver}, Arc, Mutex};
 use note_listener::NoteListener;
 use oscilator::Oscilator;
+use adsr_envelope::ADSREnvelope;
 
 pub struct SampleGenerator {
-    clock: f32,
+    clock: Arc<Mutex<f32>>,
     time_step: f32,
     amplitude: f32,
-    receiver: Receiver<Vec<f32>>,
-    oscilator: Oscilator
+    receiver: Receiver<(Vec<f32>, f32)>,
+    oscilator: Oscilator,
 }
 
 impl SampleGenerator {
@@ -19,16 +21,19 @@ impl SampleGenerator {
         let time_step = 1.0 / sample_rate as f32;
 
         let (tx, rx) = mpsc::sync_channel(2);
+        let clock = Arc::new(Mutex::new(0.0));
 
-        let listener = NoteListener::new(tx);
-        listener.start_listen(octave);
+        let envelope = ADSREnvelope::new();
+        let listener = NoteListener::new(tx, envelope);
+
+        listener.start_listen(octave, clock.clone());
 
         Self { 
-            amplitude: amplitude, 
-            time_step: time_step,
-            clock: 1.0, 
+            amplitude, 
+            time_step,
+            clock, 
             receiver: rx,
-            oscilator
+            oscilator,
         }
     }
 }
@@ -39,9 +44,11 @@ impl Iterator for SampleGenerator {
     fn next(&mut self) -> Option<Self::Item> {
         let hz = self.receiver.recv().unwrap();
 
-        let next_sample = self.oscilator.calc_next_sample(self.amplitude, self.clock, hz);
+        let mut time = self.clock.lock().unwrap();
 
-        self.clock += self.time_step;
+        let next_sample = self.oscilator.calc_next_sample(self.amplitude, *time, hz.0);
+
+        *time += self.time_step;
 
         Some(next_sample)
     }

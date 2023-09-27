@@ -2,6 +2,8 @@ mod output_device;
 mod output_stream;
 mod sound_generator;
 
+use std::thread;
+
 use rand::{rngs::StdRng, SeedableRng};
 use sound_generator::SampleGenerator;
 use output_stream::OutputStream;
@@ -17,9 +19,9 @@ fn main() {
 
     let generator = SampleGenerator::new(
         config.sample_rate.0 as u16, 
-        0.5,
+        0.5, 
         4,
-        sound_generator::oscilator::Oscilator::Noise(rng)
+        sound_generator::oscilator::Oscilator::DigitalSaw
     );
 
     let _ = OutputStream::new(sample_format)

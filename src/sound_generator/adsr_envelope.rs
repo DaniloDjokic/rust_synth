@@ -43,7 +43,7 @@ impl ADSREnvelope {
             }
         }
 
-        //println!("{amplitude}");
+        println!("{amplitude}");
 
         if amplitude <= 0.0001 {
             return 0.0;
@@ -53,21 +53,23 @@ impl ADSREnvelope {
     }
 
     pub fn set_envelope(&mut self, note_on: bool, time: f32) {
+        if self.is_note_on != note_on {
+            if note_on { self.trigger_on_time = time } else { self.trigger_off_time = time } 
+        }
+
         self.is_note_on = note_on;
-
-        if note_on { self.trigger_on_time = time } else { self.trigger_off_time = time } 
     }
 
-    fn get_attack_amplitude(&self, life_time: f32) -> f32 {
-        (life_time / self.attack_time) * self.start_amplitude
+    fn get_attack_amplitude(&self, env_time: f32) -> f32 {
+        (env_time / self.attack_time) * self.start_amplitude
     }
 
-    fn get_decay_amplitude(&self, life_time: f32) -> f32 {
-        ((life_time - self.attack_time) / self.decay_time) * (self.sustain_amplitude - self.start_amplitude) + self.start_amplitude
+    fn get_decay_amplitude(&self, env_time: f32) -> f32 {
+        ((env_time - self.attack_time) / self.decay_time) * (self.sustain_amplitude - self.start_amplitude) + self.start_amplitude
     }
 
-    fn get_release_amplitude(&self, life_time: f32) -> f32 {
-        (life_time / self.release_time) * (0.0 - self.sustain_amplitude) + self.sustain_amplitude
+    fn get_release_amplitude(&self, env_time: f32) -> f32 {
+        (env_time / self.release_time) * (0.0 - self.sustain_amplitude) + self.sustain_amplitude
     }
 }
 

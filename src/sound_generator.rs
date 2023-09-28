@@ -1,13 +1,15 @@
 mod note_listener;
 mod note_config;
 pub mod oscilator;
+mod adsr_envelope;
 
 use std::sync::{mpsc::{self, Receiver}, Arc, RwLock};
 use note_listener::NoteListener;
 use oscilator::Oscilator;
+use adsr_envelope::ADSREnvelope;
 
 pub struct SampleGenerator {
-    clock: Arc<RwLock<f32>>,
+    clock: Arc<RwLock<Arc<Mutex<f32>>>>,
     time_step: f32,
     amplitude: f32,
     receiver: Receiver<(Vec<f32>, Option<f32>)>,
@@ -20,6 +22,10 @@ impl SampleGenerator {
         let time_step = 1.0 / sample_rate as f32;
 
         let (tx, rx) = mpsc::sync_channel(2);
+        let clock = Arc::new(Mutex::new(0.0));
+
+        let envelope = ADSREnvelope::new();
+        let listener = NoteListener::new(tx, envelope);
 
         let listener = NoteListener::new(tx);
         listener.start_listen(octave, Arc::clone(&clock));
@@ -29,7 +35,7 @@ impl SampleGenerator {
             time_step: time_step,
             clock, 
             receiver: rx,
-            oscilator
+            oscilator,
         }
     }
 }

@@ -4,13 +4,18 @@ use std::sync::mpsc::{self, Sender, SyncSender};
 use rdev::{listen, Event, EventType, Key};
 use super::note_config;
 
-pub struct NoteListener {
-    pressed_keys: Vec<Key>,
-    sender: SyncSender<(Vec<f32>, Option<f32>)>,
+pub struct InputEventData {
+    pub hz: Vec<f32>,
+    pub time: Option<f32>,
 }
 
-impl NoteListener {
-    pub fn new(sender: SyncSender<(Vec<f32>, Option<f32>)>) -> Self {
+pub struct InputListener {
+    pressed_keys: Vec<Key>,
+    sender: SyncSender<InputEventData>,
+}
+
+impl InputListener {
+    pub fn new(sender: SyncSender<InputEventData>) -> Self {
         Self { pressed_keys: Vec::new(), sender }
     }
 
@@ -18,19 +23,27 @@ impl NoteListener {
         thread::spawn(move || {
             let (tx, rx) = mpsc::channel();
 
-            NoteListener::listen(tx, clock);
-            let mut return_time: Option<f32> = None;
+            InputListener::listen(tx, clock);
+            let mut sequence_time: Option<f32> = None;
             
             loop {
                 if let Ok((press, time)) = rx.try_recv() {
-                    return_time = Some(time);
                     match press {
                         EventType::KeyPress(key) => {
+                            if self.pressed_keys.len() == 0 {
+                                sequence_time = Some(time);
+                            }
                             if !self.pressed_keys.contains(&key) { 
-                                self.pressed_keys.push(key)
+                                self.pressed_keys.push(key);
                             }
                         },
-                        EventType::KeyRelease(key) => self.pressed_keys.retain(|&x| x != key),
+                        EventType::KeyRelease(key) => {
+                            self.pressed_keys.retain(|&x| x != key);
+
+                            if self.pressed_keys.len() == 0 {
+                                sequence_time = Some(time);
+                            }
+                        }
                         _ => ()
                     };
                 }
@@ -40,7 +53,12 @@ impl NoteListener {
                     .filter_map(|x| note_config::get_frequency(*x, octave))
                     .collect();
 
-                self.sender.send((keys, return_time)).unwrap();                
+                let ret_val = InputEventData {
+                    hz: keys, 
+                    time: sequence_time,
+                };
+
+                self.sender.send(ret_val).unwrap();                
             }
         })
     }

@@ -2,8 +2,6 @@ mod output_device;
 mod output_stream;
 mod sound_generator;
 
-use std::thread;
-
 use rand::{rngs::StdRng, SeedableRng};
 use sound_generator::SampleGenerator;
 use output_stream::OutputStream;

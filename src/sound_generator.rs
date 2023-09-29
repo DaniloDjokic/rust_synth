@@ -1,20 +1,22 @@
-mod note_listener;
+mod input_listener;
 mod note_config;
 pub mod oscilator;
 mod adsr_envelope;
 
 use adsr_envelope::ADSREnvelope;
 use std::sync::{mpsc::{self, Receiver}, Arc, RwLock};
-use note_listener::NoteListener;
+use input_listener::InputListener;
+use input_listener::InputEventData;
 use oscilator::Oscilator;
 
 pub struct SampleGenerator {
     clock: Arc<RwLock<f32>>,
     time_step: f32,
     amplitude: f32,
-    receiver: Receiver<(Vec<f32>, Option<f32>)>,
+    receiver: Receiver<InputEventData>,
     oscilator: Oscilator,
     envelope: ADSREnvelope,
+    buffered_hz: Vec<f32>,
 }
 
 impl SampleGenerator {
@@ -26,7 +28,7 @@ impl SampleGenerator {
 
         let envelope = ADSREnvelope::new();
 
-        let listener = NoteListener::new(tx);
+        let listener = InputListener::new(tx);
         listener.start_listen(octave, Arc::clone(&clock));
 
         Self { 
@@ -35,7 +37,8 @@ impl SampleGenerator {
             clock, 
             receiver: rx,
             oscilator,
-            envelope
+            envelope,
+            buffered_hz: vec![],
         }
     }
 }
@@ -44,14 +47,29 @@ impl Iterator for SampleGenerator {
     type Item = f32;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let hz = self.receiver.recv().unwrap();
+        let event_data = self.receiver.recv().unwrap();
+        if event_data.hz.len() != 0 {
+            self.buffered_hz = event_data.hz.clone();
+        }
 
-        if let Some(time) = hz.1 {
-            self.envelope.set_envelope(hz.0.len() > 0, time);
+        if let Some(time) = event_data.time {
+            if event_data.hz.len() > 0 {
+                self.envelope.set_note_on(time);
+            }
+            else {
+                self.envelope.set_note_off(time);
+            }
         }
 
         let next_amplitude = self.envelope.get_amplitude(*self.clock.read().unwrap());
-        let next_hz = self.oscilator.calc_next_sample(self.amplitude, *self.clock.read().unwrap(), hz.0);
+        let next_hz;
+
+        if next_amplitude != 0.0 && event_data.hz.len() == 0 {
+            next_hz = self.oscilator.calc_next_sample(self.amplitude, *self.clock.read().unwrap(), self.buffered_hz.clone());
+        }
+        else {
+            next_hz = self.oscilator.calc_next_sample(self.amplitude, *self.clock.read().unwrap(), event_data.hz);
+        }
 
         *self.clock.write().unwrap() += self.time_step;
 

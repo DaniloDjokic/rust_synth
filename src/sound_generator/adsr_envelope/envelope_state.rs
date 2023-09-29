@@ -8,20 +8,20 @@ pub enum EnvelopeState {
 }
 
 impl EnvelopeState {
-    pub fn get_state(env: &ADSREnvelope, life_time: f32) -> Option<EnvelopeState> {
+    pub fn get_state(env: &ADSREnvelope, env_time: f32) -> Option<EnvelopeState> {
         if !env.is_note_on {
             return Some(EnvelopeState::Release);
         }
         else {
-            if life_time <= env.attack_time {
+            if env_time <= env.attack_time {
                 return Some(EnvelopeState::Attack);
             }
 
-            if life_time > env.attack_time && life_time <= (env.attack_time + env.decay_time) {
+            if env_time > env.attack_time && env_time <= (env.attack_time + env.decay_time) {
                 return Some(EnvelopeState::Decay);
             }
 
-            if life_time > (env.attack_time + env.decay_time) {
+            if env_time > (env.attack_time + env.decay_time) {
                 return Some(EnvelopeState::Sustain);
             }
 

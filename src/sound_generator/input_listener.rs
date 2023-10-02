@@ -54,7 +54,7 @@ impl InputListener {
                                 let note = notes.iter_mut().find(|e| e.scale_id == scale_id);
                                 if let Some(note) = note {
                                     if note.time_deactivated < note.time_activated {
-                                        note.is_active = false;
+                                        note.time_deactivated = sequence_time.unwrap();
                                     }
                                 }
                             } 

@@ -1,6 +1,6 @@
 use rdev::Key;
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum ScaleId {
     C, Cs, C1, C1s, D, D1, Ds, D1s, _Db,
     E, E1, _Eb, F, Fs, G, Gs, _Gb,
@@ -25,7 +25,7 @@ pub fn get_note_for_key(key: &Key) -> Option<ScaleId> {
         Key::KeyL => Some(ScaleId::C1s),
         Key::Dot => Some(ScaleId::D1),
         Key::SemiColon => Some(ScaleId::D1s),
-        Key::BackSlash => Some(ScaleId::E1),
+        Key::Slash => Some(ScaleId::E1),
         _ => None,
     }
 }

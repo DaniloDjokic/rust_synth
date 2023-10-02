@@ -52,17 +52,22 @@ impl Iterator for SampleGenerator {
     type Item = f32;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let event_data = self.receiver.recv().unwrap();
+        let mut event_data = self.receiver.recv().unwrap();
 
         let mut next_sample = 0.0;
-        for note in event_data.notes {
-            let note_finished = false;
-            let sample = self.instrument.get_next_sample(*self.clock.read().unwrap(), &note, note_finished);
+        for note in event_data.notes.iter_mut() {
+            let mut note_finished = false;
+            let sample = self.instrument.get_next_sample(*self.clock.read().unwrap(), &note, &mut note_finished);
             next_sample += sample;
+
+            if note_finished && note.time_deactivated > note.time_deactivated { 
+                note.is_active = false; 
+            } 
         }
 
+        event_data.notes.retain(|e| e.is_active);
         *self.clock.write().unwrap() += self.time_step;
 
-        Some(next_sample * 0.2)
+        Some(next_sample * 0.5)
     }
 }

@@ -1,60 +1,70 @@
 use std::sync::{RwLock, Arc};
 use std::thread::{self, JoinHandle};
 use std::sync::mpsc::{self, Sender, SyncSender};
-use rdev::{listen, Event, EventType, Key};
-use super::note_config;
+use rdev::{listen, Event, EventType};
+use super::note::scale_config::get_note_for_key;
+use super::note::Note;
 
 pub struct InputEventData {
-    pub hz: Vec<f32>,
+    pub notes: Vec<Note>,
     pub time: Option<f32>,
 }
 
 pub struct InputListener {
-    pressed_keys: Vec<Key>,
     sender: SyncSender<InputEventData>,
 }
 
 impl InputListener {
     pub fn new(sender: SyncSender<InputEventData>) -> Self {
-        Self { pressed_keys: Vec::new(), sender }
+        Self { sender }
     }
 
-    pub fn start_listen(mut self, octave: usize, clock: Arc<RwLock<f32>>) -> JoinHandle<()> {
+    pub fn start_listen(self, clock: Arc<RwLock<f32>>) -> JoinHandle<()> {
         thread::spawn(move || {
             let (tx, rx) = mpsc::channel();
 
             InputListener::listen(tx, clock);
-            let mut sequence_time: Option<f32> = None;
-            
+            let mut notes: Vec<Note> = vec![];
+            let mut sequence_time = None;
             loop {
                 if let Ok((press, time)) = rx.try_recv() {
+                    sequence_time = Some(time);
+
                     match press {
                         EventType::KeyPress(key) => {
-                            if self.pressed_keys.len() == 0 {
-                                sequence_time = Some(time);
-                            }
-                            if !self.pressed_keys.contains(&key) { 
-                                self.pressed_keys.push(key);
+                            if let Some(scale_id) = get_note_for_key(&key) {
+                                let note = notes.iter_mut().find(|e| e.scale_id == scale_id);
+                                match note {
+                                    Some(note) => {
+                                        if note.time_deactivated > note.time_activated {
+                                            note.time_activated = sequence_time.unwrap();
+                                            note.is_active = true;
+                                        }
+                                    },
+                                    None => {
+                                        let note = Note::new(scale_id, sequence_time.unwrap(), 0.0);
+                                        notes.push(note);
+                                    }
+                                }
                             }
                         },
                         EventType::KeyRelease(key) => {
-                            self.pressed_keys.retain(|&x| x != key);
-
-                            if self.pressed_keys.len() == 0 {
-                                sequence_time = Some(time);
-                            }
+                            let scale_id = get_note_for_key(&key);
+                            if let Some(scale_id) = scale_id {
+                                let note = notes.iter_mut().find(|e| e.scale_id == scale_id);
+                                if let Some(note) = note {
+                                    if note.time_deactivated < note.time_activated {
+                                        note.is_active = false;
+                                    }
+                                }
+                            } 
                         }
                         _ => ()
                     };
                 }
 
-                let keys: Vec<f32> = self.pressed_keys
-                    .iter()
-                    .filter_map(|x| note_config::get_frequency(*x, octave))
-                    .collect();
-
                 let ret_val = InputEventData {
-                    hz: keys, 
+                    notes: notes.clone(), 
                     time: sequence_time,
                 };
 

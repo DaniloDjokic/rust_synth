@@ -8,9 +8,6 @@ pub struct ADSREnvelope {
 
     sustain_amplitude: f32,
     start_amplitude: f32,
-
-    trigger_on_time: f32,
-    trigger_off_time: f32,
 }
 
 impl ADSREnvelope {
@@ -21,39 +18,29 @@ impl ADSREnvelope {
             start_amplitude: 0.8,
             sustain_amplitude: 0.2,
             release_time: 0.5,
-            trigger_on_time: 0.0,
-            trigger_off_time: 0.0,
         }
     }
 
-    pub fn set_note_on(&mut self, time: f32) {
-        self.trigger_on_time = time;
-    }
-
-    pub fn set_note_off(&mut self, time: f32) {
-        self.trigger_off_time = time;
-    }
-
-    pub fn get_amplitude(&self, time: f32) -> f32 {
+    pub fn get_amplitude(&self, time: f32, time_on: f32, time_off: f32) -> f32 {
         let mut amplitude;
         let release_amplitude;
 
         let life_time;
-        if self.trigger_on_time > self.trigger_off_time {
-            life_time = time - self.trigger_on_time;
+        if time_on > time_off {
+            life_time = time - time_on;
             amplitude = self.get_state_amplitude(life_time);
         }
         else {
-            life_time = self.trigger_off_time - self.trigger_on_time;
+            life_time = time_off - time_on;
             release_amplitude = self.get_state_amplitude(life_time);
-            amplitude = self.get_release_amplitude(time, release_amplitude);
+            amplitude = self.get_release_amplitude(time, time_off, release_amplitude);
         }
        
         if amplitude <= 0.0001 {
             amplitude = 0.0;
         }
 
-        amplitude
+        amplitude 
     }
 
     fn get_state_amplitude(&self, life_time: f32) -> f32 {
@@ -80,8 +67,8 @@ impl ADSREnvelope {
         self.sustain_amplitude
     }
 
-    fn get_release_amplitude(&self, time: f32, release_amplitude: f32) -> f32 {
-        ((time - self.trigger_off_time) / self.release_time) * (0.0 - release_amplitude) + release_amplitude
+    fn get_release_amplitude(&self, time: f32, time_off: f32, release_amplitude: f32) -> f32 {
+        ((time - time_off) / self.release_time) * (0.0 - release_amplitude) + release_amplitude
     }
 }
 

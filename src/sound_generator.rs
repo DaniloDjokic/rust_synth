@@ -1,21 +1,21 @@
 mod oscilator;
 mod input_listener;
 mod note;
-mod instrument;
+pub mod instrument;
 mod adsr_envelope;
 
-use adsr_envelope::ADSREnvelope;
+use instrument::epiano::EPiano;
 use std::sync::{mpsc::{self, Receiver}, Arc, RwLock};
 use input_listener::InputListener;
 use input_listener::InputEventData;
 
-use self::{instrument::{Instrument, InstrumentTrait}, note::Note};
+use self::{note::Note, instrument::Instrument};
 
 pub struct SampleGenerator {
     clock: Arc<RwLock<f32>>,
     time_step: f32,
     receiver: Receiver<InputEventData>,
-    instrument: Instrument,
+    instruments: Vec<Box<dyn Instrument + Send>>,
 }
 
 impl SampleGenerator {
@@ -28,21 +28,27 @@ impl SampleGenerator {
         let listener = InputListener::new(tx);
         listener.start_listen(Arc::clone(&clock));
 
-        let instrument = Instrument::new(ADSREnvelope::new());
+        let instruments: Vec<Box<(dyn Instrument + Send)>> = vec![Box::new(EPiano::new())];
 
-        Self { time_step, clock, receiver, instrument }
+        Self { time_step, clock, receiver, instruments }
     }
 
-    fn sum_note_samples(&self, note: &mut Note, next_sample: &mut f32){
-        let sample = self.instrument.get_next_sample(*self.clock.read().unwrap(), &note);
-        match sample {
-            Some(sample) => *next_sample += sample,
-            None => if note.time_deactivated > note.time_deactivated { note.is_active = false }
-        }
+    fn sum_note_samples(&self, note: &mut Note, next_sample: &mut f32) {
+        self.instruments.iter()
+        .for_each(|e| {
+            let sample = e.get_next_sample(*self.clock.read().unwrap(), &note);
+
+            match sample {
+                Some(sample) => *next_sample += sample,
+                None => if note.time_deactivated > note.time_deactivated { note.is_active = false }
+            }
+            //TODO probably not correct as these should play individually on different channels
+        });
     }
 }
 
-impl Iterator for SampleGenerator {
+impl Iterator for SampleGenerator
+{
     type Item = f32;
 
     fn next(&mut self) -> Option<Self::Item> {

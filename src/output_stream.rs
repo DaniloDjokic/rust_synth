@@ -44,7 +44,7 @@ impl OutputStream {
 
     fn build_cpal_stream<T>(device: &Device, config: &StreamConfig, mut generator: SampleGenerator) -> Result<Stream, anyhow::Error>
     where 
-        T: SizedSample + FromSample<f32>,
+        T: SizedSample + FromSample<f32>
     {
         let channels = config.channels as usize;
 

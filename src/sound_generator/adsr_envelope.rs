@@ -7,17 +7,23 @@ pub struct ADSREnvelope {
     release_time: f32,
 
     sustain_amplitude: f32,
-    start_amplitude: f32,
+    attack_amplitude: f32,
 }
 
 impl ADSREnvelope {
-    pub fn new() -> Self {
+    pub fn new(
+        attack_time: f32, 
+        decay_time: f32, 
+        release_time: f32, 
+        attack_amplitude: f32,
+        sustain_amplitude: f32
+    ) -> Self {
         Self {
-            attack_time: 1.0,
-            decay_time: 0.5,
-            start_amplitude: 0.8,
-            sustain_amplitude: 0.2,
-            release_time: 0.5,
+            attack_time,
+            decay_time,
+            attack_amplitude,
+            sustain_amplitude,
+            release_time,
         }
     }
 
@@ -56,11 +62,11 @@ impl ADSREnvelope {
     }
 
     fn get_attack_amplitude(&self, env_time: f32) -> f32 {
-        (env_time / self.attack_time) * self.start_amplitude
+        (env_time / self.attack_time) * self.attack_amplitude
     }
 
     fn get_decay_amplitude(&self, env_time: f32) -> f32 {
-        ((env_time - self.attack_time) / self.decay_time) * (self.sustain_amplitude - self.start_amplitude) + self.start_amplitude
+        ((env_time - self.attack_time) / self.decay_time) * (self.sustain_amplitude - self.attack_amplitude) + self.attack_amplitude
     }
 
     fn get_sustain_amplitude(&self) -> f32 {

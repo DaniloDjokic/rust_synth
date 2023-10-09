@@ -5,8 +5,6 @@ use helpers::{
     TRIANGLE_WAVE_AMPLITUDE_FACTOR,
     SAW_WAVE_AMPLITUDE_FACTOR
 };
-use rand::{rngs::StdRng, Rng};
-use self::helpers::NOISE_AMPLITUDE_FACTOR;
 
 pub enum Oscilator {
     Sine,
@@ -14,18 +12,18 @@ pub enum Oscilator {
     Triangle,
     AnalogSaw(u32),
     DigitalSaw,
-    Noise(StdRng),
+    Noise,
 }
 
 impl Oscilator {
-    pub fn calc_next_sample(osc: &mut Oscilator, time: f32, hz: f32) -> f32 {
+    pub fn calc_next_sample(osc: &Oscilator, time: f32, hz: f32) -> f32 {
         match osc {
             Oscilator::Sine => calc_sine_wave_sample(time, hz),
             Oscilator::Square => calc_square_wave_sample(time, hz),
             Oscilator::Triangle => calc_triangle_wave_sample(time, hz),
             Oscilator::AnalogSaw(factor) => calc_analog_saw_wave_sample(time, hz, *factor),
             Oscilator::DigitalSaw => calc_digital_saw_wave_sample(time, hz),
-            Oscilator::Noise(ref mut rng) => calc_noise_sample(rng),
+            Oscilator::Noise => calc_noise_sample(),
         } 
     }
 }
@@ -67,8 +65,9 @@ fn calc_digital_saw_wave_sample(time: f32, hz: f32) -> f32 {
     SAW_WAVE_AMPLITUDE_FACTOR * value_mod - SAW_WAVE_AMPLITUDE_FACTOR
 }
 
-fn calc_noise_sample<R: Rng>(rng: &mut R) -> f32 {
-    NOISE_AMPLITUDE_FACTOR * ((rng.gen::<f32>() / 1.0) - 1.0)
+fn calc_noise_sample() -> f32 {
+    0.0
+   // NOISE_AMPLITUDE_FACTOR * ((rng.gen::<f32>() / 1.0) - 1.0) 
 }
 
 fn osc_sine(clock: f32, hz: f32, factor: f32) -> f32 {

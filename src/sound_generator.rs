@@ -1,8 +1,8 @@
 mod oscilator;
 mod input_listener;
 mod note;
-pub mod instrument;
 mod adsr_envelope;
+pub mod instrument;
 
 use instrument::epiano::EPiano;
 use std::sync::{mpsc::{self, Receiver}, Arc, RwLock};
@@ -47,8 +47,7 @@ impl SampleGenerator {
     }
 }
 
-impl Iterator for SampleGenerator
-{
+impl Iterator for SampleGenerator {
     type Item = f32;
 
     fn next(&mut self) -> Option<Self::Item> {

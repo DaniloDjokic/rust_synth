@@ -14,6 +14,16 @@ pub fn run_synth() {
 
     let generator = SampleGenerator::new(config.sample_rate.0 as u16);
 
+    let keyboard = "
+|   |   |   |   | |   |   |   |   | |   |   | |   |   |   |
+|   | S |   |   | F | | G |   |   | J | | K | | L |   |   |
+|   |___|   |   |___| |___|   |   |___| |___| |___|   |   |__
+|     |     |     |     |     |     |     |     |     |     |
+|  Z  |  X  |  C  |  V  |  B  |  N  |  M  |  ,  |  .  |  /  |
+|_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|";
+
+    println!("{keyboard}");
+
     let _ = OutputStream::new(sample_format)
         .build(&device, &config, generator)
         .unwrap()

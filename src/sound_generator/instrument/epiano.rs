@@ -1,7 +1,7 @@
 use crate::sound_generator::{
     adsr_envelope::ADSREnvelope, 
-    note::Note, 
-    oscilator::Oscilator
+    oscilator::Oscilator,
+    instrument::OscilatorFactor
 };
 use super::Instrument;
 
@@ -9,21 +9,30 @@ pub struct EPiano {
     envelope: ADSREnvelope,
     volume: f32,
     channel: usize,
+    oscillators: Vec<OscilatorFactor>,
 }
 
 impl EPiano {
     pub fn new() -> Self {
         let env = ADSREnvelope::new(
-            4.0,
-            1.0,
+            0.2,
+            0.2,
             0.5,
             1.0,
             0.8
         );
+
+        let oscillators = vec![
+            OscilatorFactor(Oscilator::Sine, 0.5),
+            OscilatorFactor(Oscilator::Square, 0.25),
+            OscilatorFactor(Oscilator::Triangle, 0.25),
+        ];
+
         Self {
             envelope: env,
             volume: 1.0,
             channel: 1,
+            oscillators: oscillators  
         }
     }
 }
@@ -31,13 +40,10 @@ impl EPiano {
 unsafe impl Send for EPiano {}
 
 impl Instrument for EPiano {
-    //refactor this out
-    fn get_osc_sample(&self, time: f32, note: &Note) -> f32 {
-        0.5 * Oscilator::calc_next_sample(&mut Oscilator::Sine, time, note.get_frequency())
-        + 0.25 * Oscilator::calc_next_sample(&mut Oscilator::Square, time, note.get_frequency())
-        + 0.25 * Oscilator::calc_next_sample(&mut Oscilator::Triangle, time, note.get_frequency())
+    fn get_oscilators(&self) -> &Vec<super::OscilatorFactor> {
+        &self.oscillators
     }
-
+    
     fn get_envelope(&self) -> &ADSREnvelope {
         &self.envelope
     }

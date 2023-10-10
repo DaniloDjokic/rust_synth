@@ -1,7 +1,8 @@
 pub mod epiano;
+pub mod bell;
 use super::{note::Note, adsr_envelope::ADSREnvelope, oscilator::Oscilator};
 
-pub struct OscilatorFactor(Oscilator, f32);
+pub struct OscilatorFactor(Oscilator, f32, usize);
 
 pub trait Instrument {
     fn get_oscilators(&self) -> &Vec<OscilatorFactor>;
@@ -26,7 +27,7 @@ pub trait Instrument {
     
         oscilators.iter()
         .map(|e| 
-            e.1 * Oscilator::calc_next_sample(&e.0, time, note.get_frequency())
+            e.1 * Oscilator::calc_next_sample(&e.0, time, note.get_frequency(e.2))
         )
         .sum::<f32>()
     }

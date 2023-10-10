@@ -41,11 +41,11 @@ impl ADSREnvelope {
             release_amplitude = self.get_state_amplitude(life_time);
             amplitude = self.get_release_amplitude(time, time_off, release_amplitude);
         }
-       
+
         if amplitude <= 0.0001 {
             amplitude = 0.0;
         }
-
+       
         amplitude 
     }
 

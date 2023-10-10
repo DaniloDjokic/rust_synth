@@ -9,7 +9,7 @@ use std::sync::{mpsc::{self, Receiver}, Arc, RwLock};
 use input_listener::InputListener;
 use input_listener::InputEventData;
 
-use self::{note::Note, instrument::Instrument};
+use self::{note::Note, instrument::{Instrument, bell::Bell}};
 
 pub struct SampleGenerator {
     clock: Arc<RwLock<f32>>,
@@ -28,7 +28,7 @@ impl SampleGenerator {
         let listener = InputListener::new(tx);
         listener.start_listen(Arc::clone(&clock));
 
-        let instruments: Vec<Box<(dyn Instrument + Send)>> = vec![Box::new(EPiano::new())];
+        let instruments: Vec<Box<(dyn Instrument + Send)>> = vec![Box::new(Bell::new())];
 
         Self { time_step, clock, receiver, instruments }
     }
@@ -40,7 +40,7 @@ impl SampleGenerator {
 
             match sample {
                 Some(sample) => *next_sample += sample,
-                None => if note.time_deactivated > note.time_deactivated { note.is_active = false }
+                None => if note.time_deactivated > note.time_activated { note.is_active = false }
             }
             //TODO probably not correct as these should play individually on different channels
         });

@@ -24,8 +24,8 @@ impl EPiano {
 
         let oscillators = vec![
             OscilatorFactor(Oscilator::Sine, 0.5, 1),
-            OscilatorFactor(Oscilator::Square, 0.25, 2),
-            OscilatorFactor(Oscilator::Triangle, 0.25, 3),
+            OscilatorFactor(Oscilator::Sine, 0.25, 2),
+            OscilatorFactor(Oscilator::Sine, 0.25, 3),
         ];
 
         Self {

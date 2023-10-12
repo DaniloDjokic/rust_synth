@@ -21,9 +21,9 @@ impl Bell {
         );
 
         let oscillators = vec![
-            OscilatorFactor(Oscilator::Sine, 1.0, 12),
-            OscilatorFactor(Oscilator::Sine, 0.5, 24),
-            OscilatorFactor(Oscilator::Sine, 0.25, 36),
+            OscilatorFactor(Oscilator::Sine, 1.0, 0),
+            OscilatorFactor(Oscilator::Sine, 0.5, 1),
+            OscilatorFactor(Oscilator::Sine, 0.25, 2),
         ];
 
         Self {

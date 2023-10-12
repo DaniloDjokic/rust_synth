@@ -20,7 +20,7 @@ impl Note {
         }
     }
 
-    pub fn get_frequency(&self) -> f32 {
-        scale_config::get_note_frequency(&self)
+    pub fn get_frequency(&self, octave: i32) -> f32 {
+        scale_config::get_note_frequency(&self, octave)
     }
 }

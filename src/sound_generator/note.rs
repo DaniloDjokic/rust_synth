@@ -1,9 +1,8 @@
-use self::scale_config::ScaleId;
 pub mod scale_config;
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct Note {
-    pub scale_id: ScaleId,
+    pub scale_id : i32,
     pub time_activated: f32,
     pub time_deactivated: f32,
     pub is_active: bool,
@@ -11,7 +10,7 @@ pub struct Note {
 }
 
 impl Note {
-    pub fn new(scale_id: ScaleId, time_activated: f32, time_deactivated: f32) -> Note {
+    pub fn new(scale_id: i32, time_activated: f32, time_deactivated: f32) -> Note {
         Self {
             scale_id,
             time_activated,
@@ -21,7 +20,7 @@ impl Note {
         }
     }
 
-    pub fn get_frequency(&self, octave: usize) -> f32 {
-        scale_config::get_note_frequency(&self.scale_id, octave)
+    pub fn get_frequency(&self) -> f32 {
+        scale_config::get_note_frequency(&self)
     }
 }

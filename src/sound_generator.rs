@@ -4,7 +4,6 @@ mod note;
 mod adsr_envelope;
 pub mod instrument;
 
-use instrument::epiano::EPiano;
 use std::sync::{mpsc::{self, Receiver}, Arc, RwLock};
 use input_listener::InputListener;
 use input_listener::InputEventData;

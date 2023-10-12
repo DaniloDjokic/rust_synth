@@ -27,7 +27,7 @@ pub trait Instrument {
     
         oscilators.iter()
         .map(|e| 
-            e.1 * Oscilator::calc_next_sample(&e.0, time, note.get_frequency(e.2))
+            e.1 * Oscilator::calc_next_sample(&e.0, time, note.get_frequency())
         )
         .sum::<f32>()
     }

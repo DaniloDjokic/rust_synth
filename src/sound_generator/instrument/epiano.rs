@@ -1,15 +1,14 @@
 use crate::sound_generator::{
     adsr_envelope::ADSREnvelope, 
     oscilator::Oscilator,
-    instrument::OscilatorFactor
 };
-use super::Instrument;
+use super::{Instrument, instrument_oscilator::InstrumentOscilator};
 
 pub struct EPiano {
     envelope: ADSREnvelope,
     volume: f32,
     channel: usize,
-    oscillators: Vec<OscilatorFactor>,
+    oscillators: Vec<InstrumentOscilator>,
 }
 
 impl EPiano {
@@ -23,9 +22,9 @@ impl EPiano {
         );
 
         let oscillators = vec![
-            OscilatorFactor(Oscilator::Sine, 0.5, 1),
-            OscilatorFactor(Oscilator::Sine, 0.25, 2),
-            OscilatorFactor(Oscilator::Sine, 0.25, 3),
+            InstrumentOscilator::new(Oscilator::Sine, 0.5, 1, None),
+            InstrumentOscilator::new(Oscilator::Sine, 0.25, 2, None),
+            InstrumentOscilator::new(Oscilator::Sine, 0.25, 3, None),
         ];
 
         Self {
@@ -40,7 +39,7 @@ impl EPiano {
 unsafe impl Send for EPiano {}
 
 impl Instrument for EPiano {
-    fn get_oscilators(&self) -> &Vec<super::OscilatorFactor> {
+    fn get_oscilators(&self) -> &Vec<super::InstrumentOscilator> {
         &self.oscillators
     }
     

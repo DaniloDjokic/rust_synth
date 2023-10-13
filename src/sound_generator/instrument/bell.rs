@@ -1,11 +1,11 @@
-use crate::sound_generator::{adsr_envelope::ADSREnvelope, oscilator::Oscilator};
-use super::{Instrument, OscilatorFactor};
+use crate::sound_generator::{adsr_envelope::ADSREnvelope, oscilator::{Oscilator, lfo::LFO}};
+use super::{Instrument, InstrumentOscilator};
 
 pub struct Bell {
     envelope: ADSREnvelope,
     volume: f32,
     channel: usize,
-    oscillators: Vec<OscilatorFactor>,
+    oscillators: Vec<InstrumentOscilator>,
 }
 
 unsafe impl Send for Bell {}
@@ -21,9 +21,9 @@ impl Bell {
         );
 
         let oscillators = vec![
-            OscilatorFactor(Oscilator::Sine, 1.0, 0),
-            OscilatorFactor(Oscilator::Sine, 0.5, 1),
-            OscilatorFactor(Oscilator::Sine, 0.25, 2),
+            InstrumentOscilator::new(Oscilator::Sine, 1.0, 0, Some(LFO::new(5.0, 0.001))),
+            InstrumentOscilator::new(Oscilator::Sine, 0.5, 1, None),
+            InstrumentOscilator::new(Oscilator::Sine, 0.25, 2, None),
         ];
 
         Self {
@@ -36,7 +36,7 @@ impl Bell {
 }
 
 impl Instrument for Bell {
-    fn get_oscilators(&self) -> &Vec<super::OscilatorFactor> {
+    fn get_oscilators(&self) -> &Vec<super::InstrumentOscilator> {
         &self.oscillators
     }
 

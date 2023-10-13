@@ -1,4 +1,8 @@
 mod helpers;
+pub mod lfo;
+
+use lfo::LFO;
+
 use helpers::{
     Radian, 
     SQUARE_WAVE_AMPLITUDE_FACTOR, 
@@ -16,24 +20,30 @@ pub enum Oscilator {
 }
 
 impl Oscilator {
-    pub fn calc_next_sample(osc: &Oscilator, time: f32, hz: f32) -> f32 {
+    pub fn calc_next_sample(osc: &Oscilator, time: f32, hz: f32, lfo: &Option<LFO>) -> f32 {
+        let mut freq = hz.to_rad() * time;
+
+        if let Some(lfo) = lfo {
+            freq += lfo.get_lfo_frequency(time);
+        }
+
         match osc {
-            Oscilator::Sine => calc_sine_wave_sample(time, hz),
-            Oscilator::Square => calc_square_wave_sample(time, hz),
-            Oscilator::Triangle => calc_triangle_wave_sample(time, hz),
-            Oscilator::AnalogSaw(factor) => calc_analog_saw_wave_sample(time, hz, *factor),
+            Oscilator::Sine => calc_sine_wave_sample(freq),
+            Oscilator::Square => calc_square_wave_sample(freq),
+            Oscilator::Triangle => calc_triangle_wave_sample(freq),
+            Oscilator::AnalogSaw(factor) => calc_analog_saw_wave_sample(freq, *factor),
             Oscilator::DigitalSaw => calc_digital_saw_wave_sample(time, hz),
             Oscilator::Noise => calc_noise_sample(),
         } 
     }
 }
 
-fn calc_sine_wave_sample(time: f32, hz: f32) -> f32 {
-    osc_sine(time, hz, 1.0)
+fn calc_sine_wave_sample(freq: f32) -> f32 {
+    osc_sine(freq, 1.0)
 }
 
-fn calc_square_wave_sample(time: f32, hz: f32) -> f32 {
-    let sine = osc_sine(time, hz, 1.0);
+fn calc_square_wave_sample(freq: f32) -> f32 {
+    let sine = osc_sine(freq, 1.0);
 
         if sine > 0.0 { 
             SQUARE_WAVE_AMPLITUDE_FACTOR 
@@ -43,17 +53,17 @@ fn calc_square_wave_sample(time: f32, hz: f32) -> f32 {
         }
 }
 
-fn calc_triangle_wave_sample(time: f32, hz: f32) -> f32 {
-    let sine = osc_sine(time, hz, 1.0);
+fn calc_triangle_wave_sample(freq: f32) -> f32 {
+    let sine = osc_sine(freq, 1.0);
 
     sine.asin() * TRIANGLE_WAVE_AMPLITUDE_FACTOR
 }
 
-fn calc_analog_saw_wave_sample(time: f32, hz: f32, factor: u32) -> f32 {
+fn calc_analog_saw_wave_sample(freq: f32, factor: u32) -> f32 {
     let mut output = 0.0;
 
         for i in 1..=factor {
-            output += osc_sine(time, hz, i as f32) / i as f32;
+            output += osc_sine(freq, i as f32) / i as f32;
         };
     
        output * SAW_WAVE_AMPLITUDE_FACTOR
@@ -70,6 +80,6 @@ fn calc_noise_sample() -> f32 {
    // NOISE_AMPLITUDE_FACTOR * ((rng.gen::<f32>() / 1.0) - 1.0) 
 }
 
-fn osc_sine(clock: f32, hz: f32, factor: f32) -> f32 {
-    (clock * hz.to_rad() * factor).sin()
+fn osc_sine(freq: f32, factor: f32) -> f32 {
+    (freq * factor).sin()
 }

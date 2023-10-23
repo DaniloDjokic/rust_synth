@@ -21,8 +21,8 @@ impl DrumKick {
         );
 
         let oscillators = vec![
-            InstrumentOscilator::new(Oscilator::Sine, 0.99, 1, Some(LFO::new(1.0, 1.0))),
-            InstrumentOscilator::new(Oscilator::Noise, 0.01, 1, None)
+            InstrumentOscilator::new(Oscilator::Sine, 0.98, 1, Some(LFO::new(1.0, 1.0))),
+            InstrumentOscilator::new(Oscilator::Noise, 0.02, 1, None)
         ];
 
         Self {

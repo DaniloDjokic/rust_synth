@@ -28,17 +28,21 @@ impl ADSREnvelope {
     }
 
     pub fn get_amplitude(&self, time: f32, time_on: f32, time_off: f32) -> f32 {
-        let mut amplitude;
-        let release_amplitude;
-
+        let mut amplitude = 0.0;
+        let mut release_amplitude = 0.0;
         let life_time;
+
         if time_on > time_off {
             life_time = time - time_on;
-            amplitude = self.get_state_amplitude(life_time);
+            if let Some(ampl) = self.get_state_amplitude(life_time) {
+                amplitude = ampl;
+            }
         }
         else {
             life_time = time_off - time_on;
-            release_amplitude = self.get_state_amplitude(life_time);
+            if let Some(r_ampl) = self.get_state_amplitude(life_time) {
+                release_amplitude = r_ampl;
+            }
             amplitude = self.get_release_amplitude(time, time_off, release_amplitude);
         }
 
@@ -49,15 +53,15 @@ impl ADSREnvelope {
         amplitude 
     }
 
-    fn get_state_amplitude(&self, life_time: f32) -> f32 {
+    fn get_state_amplitude(&self, life_time: f32) -> Option<f32> {
         if let Some(state) = EnvelopeState::get_state(self, life_time) {
             match state {
-                EnvelopeState::Attack => self.get_attack_amplitude(life_time),
-                EnvelopeState::Decay => self.get_decay_amplitude(life_time),
-                EnvelopeState::Sustain => self.get_sustain_amplitude(),
+                EnvelopeState::Attack => Some(self.get_attack_amplitude(life_time)),
+                EnvelopeState::Decay => Some(self.get_decay_amplitude(life_time)),
+                EnvelopeState::Sustain => Some(self.get_sustain_amplitude()),
             }
         } else {
-            0.0
+            None
         }
     }
 

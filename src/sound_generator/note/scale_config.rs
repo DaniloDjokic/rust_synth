@@ -47,5 +47,5 @@ pub fn get_note_frequency(note: &Note, octave : i32) -> f32 {
     let scale_id = note.scale_id + (octave * 12);
     let base: f32 = 1.0594630943592952645618252949463;
     
-    256.0 * base.powi(scale_id)
+    8.0 * base.powi(scale_id)
 }

@@ -1,8 +1,10 @@
 pub mod epiano;
 pub mod bell;
+pub mod drum_kick;
 mod instrument_oscilator;
+
 use self::instrument_oscilator::InstrumentOscilator;
-use super::{note::Note, adsr_envelope::ADSREnvelope, oscilator::Oscilator};
+use super::{note::Note, adsr_envelope::ADSREnvelope};
 
 pub trait Instrument {
     fn get_oscilators(&self) -> &Vec<InstrumentOscilator>;
@@ -27,7 +29,7 @@ pub trait Instrument {
     
         oscilators.iter()
         .map(|e| 
-            e.amplitude * Oscilator::calc_next_sample(&e.oscilator, time, note.get_frequency(e.overtone_index), &e.lfo)
+            e.amplitude * e.oscilator.calc_next_sample(time, note.get_frequency(e.overtone_index), &e.lfo)
         )
         .sum::<f32>()
     }

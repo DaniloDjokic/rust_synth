@@ -8,7 +8,7 @@ use std::sync::{mpsc::{self, Receiver}, Arc, RwLock};
 use input_listener::InputListener;
 use input_listener::InputEventData;
 
-use self::{note::Note, instrument::{Instrument, bell::Bell}};
+use self::{note::Note, instrument::{Instrument, bell::Bell, drum_kick::DrumKick}};
 
 pub struct SampleGenerator {
     clock: Arc<RwLock<f32>>,
@@ -27,7 +27,7 @@ impl SampleGenerator {
         let listener = InputListener::new(tx);
         listener.start_listen(Arc::clone(&clock));
 
-        let instruments: Vec<Box<(dyn Instrument + Send)>> = vec![Box::new(Bell::new())];
+        let instruments: Vec<Box<(dyn Instrument + Send)>> = vec![Box::new(DrumKick::new())];
 
         Self { time_step, clock, receiver, instruments }
     }

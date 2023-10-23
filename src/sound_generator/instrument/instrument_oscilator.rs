@@ -8,10 +8,10 @@ pub struct InstrumentOscilator {
 }
 
 impl InstrumentOscilator {
-    pub fn new(oscilator: Oscilator, amplitude: f32, overtone_index: i32, lfo: Option<LFO>) -> Self {
+    pub fn new(oscilator: Oscilator, amplitude_factor: f32, overtone_index: i32, lfo: Option<LFO>) -> Self {
         InstrumentOscilator { 
             oscilator, 
-            amplitude, 
+            amplitude: amplitude_factor, 
             overtone_index, 
             lfo 
         }

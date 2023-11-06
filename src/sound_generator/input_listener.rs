@@ -52,7 +52,7 @@ impl InputListener {
     }
 
     fn handle_key_press(&self, notes: &mut Vec<Note>, key: Key, sequence_time: Option<f32>) {
-        if let Some(scale_id) = get_note_for_key(&key) {
+        if let Some((scale_id, channel)) = get_note_for_key(&key) {
             let note = notes.iter_mut().find(|e| e.scale_id == scale_id);
             match note {
                 Some(note) => {
@@ -62,7 +62,12 @@ impl InputListener {
                     }
                 },
                 None => {
-                    let note = Note::new(scale_id, sequence_time.unwrap(), 0.0);
+                    let note = Note::new(
+                        scale_id, 
+                        sequence_time.unwrap(),
+                        0.0,
+                        channel
+                    );
                     notes.push(note);
                 }
             }
@@ -72,7 +77,7 @@ impl InputListener {
     fn handle_key_release(&self, notes: &mut Vec<Note>, key: Key, sequence_time: Option<f32>) {
         let scale_id = get_note_for_key(&key);
 
-        if let Some(scale_id) = scale_id {
+        if let Some((scale_id, _channel)) = scale_id {
             let note = notes.iter_mut().find(|e| e.scale_id == scale_id);
             if let Some(note) = note {
                 if note.time_deactivated < note.time_activated {

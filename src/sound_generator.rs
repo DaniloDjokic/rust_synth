@@ -38,14 +38,18 @@ impl SampleGenerator {
         let instruments: Vec<Box<(dyn Instrument + Send)>> = vec![
             Box::new(DrumKick::new(1)),
             Box::new(DrumSnare::new(2)),
+            Box::new(Bell::new(3)),
         ];
 
         Self { time_step, clock, receiver, instruments }
     }
 
     fn sum_note_samples(&self, note: &mut Note, next_sample: &mut f32) {
-        self.instruments.iter()
-        .for_each(|e| {
+        let filtered_instruments: Vec<&Box<dyn Instrument + Send>> = self.instruments.iter()
+        .filter(|i| i.get_channel() == note.channel)
+        .collect();
+        
+        filtered_instruments.iter().for_each(|e| {
             let sample = e.get_next_sample(*self.clock.read().unwrap(), &note);
 
             match sample {

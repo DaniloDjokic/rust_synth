@@ -11,9 +11,9 @@ pub struct DrumKick {
 unsafe impl Send for DrumKick {}
 
 impl DrumKick {
-    pub fn new() -> Self {
+    pub fn new(channel: usize) -> Self {
         let env = ADSREnvelope::new(
-            0.01,
+            0.0,
             0.15,
             0.1,
             1.0,
@@ -28,7 +28,7 @@ impl DrumKick {
         Self {
             envelope: env,
             volume: 0.8,
-            channel: 1,
+            channel: channel,
             oscillators: oscillators  
         }
     }

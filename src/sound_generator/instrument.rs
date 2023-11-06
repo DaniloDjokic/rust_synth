@@ -1,6 +1,7 @@
 pub mod epiano;
 pub mod bell;
 pub mod drum_kick;
+pub mod drum_snare;
 mod instrument_oscilator;
 
 use self::instrument_oscilator::InstrumentOscilator;

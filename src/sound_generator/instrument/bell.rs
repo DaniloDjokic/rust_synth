@@ -11,7 +11,7 @@ pub struct Bell {
 unsafe impl Send for Bell {}
 
 impl Bell {
-    pub fn new() -> Self {
+    pub fn new(channel: usize) -> Self {
         let env = ADSREnvelope::new(
             0.01,
             1.0,
@@ -29,7 +29,7 @@ impl Bell {
         Self {
             envelope: env,
             volume: 0.8,
-            channel: 1,
+            channel: channel,
             oscillators: oscillators  
         }
     }

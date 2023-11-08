@@ -2,7 +2,7 @@ mod output_device;
 mod output_stream;
 pub mod sample_generator;
 
-use std::{thread, sync::mpsc::{self, Receiver}};
+use std::{thread, sync::mpsc::{self, Receiver}, io::Write};
 
 use sample_generator::SampleGenerator;
 use output_stream::OutputStream;
@@ -14,11 +14,11 @@ pub fn run_synth() {
     let sample_format = supported_config.sample_format();
     let config = supported_config.config();
 
-    let generator = SampleGenerator::new(config.sample_rate.0 as u16);
+    let (tx, rx) = mpsc::channel();
+
+    let generator = SampleGenerator::new(config.sample_rate.0 as u16, tx);
 
     display_synth();
-
-    let (tx, rx) = mpsc::channel();
 
     thread::spawn(|| {
         display_live_information(rx);
@@ -59,11 +59,15 @@ fn display_synth(){
 }
 
 fn display_live_information(receiver: Receiver<f32>) -> ! {
-    println!("Current sample: 0.0");
+    print!("Last sample: 0.0");
+    std::io::stdout().flush().unwrap();
 
     loop {
         let sample = receiver.recv().unwrap();
-
-        println!("Current sample: {}", sample);
+        
+        if sample > 0.00001 {
+            print!("\r");
+            print!("Last sample: {}", sample);        
+        }
     }
 }

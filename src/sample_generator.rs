@@ -4,7 +4,7 @@ mod note;
 mod adsr_envelope;
 pub mod instrument;
 
-use std::sync::{mpsc::{self, Receiver}, Arc, RwLock};
+use std::sync::{mpsc::{self, Receiver, Sender}, Arc, RwLock};
 use input_listener::InputListener;
 use input_listener::InputEventData;
 
@@ -21,13 +21,14 @@ use self::{
 pub struct SampleGenerator {
     clock: Arc<RwLock<f32>>,
     time_step: f32,
+    master_volume: f32,
     receiver: Receiver<InputEventData>,
     instruments: Vec<Box<dyn Instrument + Send>>,
-    pub current_playing_sample: f32,
+    sender: Sender<f32>,
 }
 
 impl SampleGenerator {
-    pub fn new(sample_rate: u16) -> Self {
+    pub fn new(sample_rate: u16, sender: Sender<f32>) -> Self {
         let clock = Arc::new(RwLock::new(0.0));
         let time_step = 1.0 / sample_rate as f32;
 
@@ -43,11 +44,12 @@ impl SampleGenerator {
         ];
 
         Self { 
+            master_volume: 0.2,
             time_step, 
             clock, 
             receiver, 
             instruments,
-            current_playing_sample: 0.0,
+            sender
         }
     }
 
@@ -78,11 +80,12 @@ impl Iterator for SampleGenerator {
             self.sum_note_samples(note, &mut next_sample);
         }
 
+        next_sample *= self.master_volume;
+
         event_data.notes.retain(|e| e.is_active);
         *self.clock.write().unwrap() += self.time_step;
 
-
-        self.current_playing_sample = next_sample;
+        self.sender.send(next_sample).unwrap();
 
         Some(next_sample)
     }

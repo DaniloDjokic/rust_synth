@@ -1,6 +1,6 @@
 use cpal::{Sample, FromSample};
 
-use crate::sound_generator::SampleGenerator;
+use crate::sample_generator::SampleGenerator;
 
 pub fn write_data<T>(output: &mut [T], channels: usize, next_sample: &mut SampleGenerator)
 where 

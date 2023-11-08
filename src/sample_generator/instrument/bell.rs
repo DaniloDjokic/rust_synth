@@ -1,28 +1,29 @@
-use crate::sound_generator::{adsr_envelope::ADSREnvelope, oscilator::{Oscilator, lfo::LFO}};
+use crate::sample_generator::{adsr_envelope::ADSREnvelope, oscilator::{Oscilator, lfo::LFO}};
 use super::{Instrument, InstrumentOscilator};
 
-pub struct DrumKick {
+pub struct Bell {
     envelope: ADSREnvelope,
     volume: f32,
     channel: usize,
     oscillators: Vec<InstrumentOscilator>,
 }
 
-unsafe impl Send for DrumKick {}
+unsafe impl Send for Bell {}
 
-impl DrumKick {
+impl Bell {
     pub fn new(channel: usize) -> Self {
         let env = ADSREnvelope::new(
-            0.0,
-            0.15,
-            0.1,
+            0.01,
+            1.0,
+            1.0,
             1.0,
             0.0
         );
 
         let oscillators = vec![
-            InstrumentOscilator::new(Oscilator::Sine, 0.98, 1, Some(LFO::new(1.0, 1.0))),
-            InstrumentOscilator::new(Oscilator::Noise, 0.02, 1, None)
+            InstrumentOscilator::new(Oscilator::Sine, 1.0, 5, Some(LFO::new(5.0, 0.001))),
+            InstrumentOscilator::new(Oscilator::Sine, 0.5, 6, None),
+            InstrumentOscilator::new(Oscilator::Sine, 0.25, 7, None),
         ];
 
         Self {
@@ -34,7 +35,7 @@ impl DrumKick {
     }
 }
 
-impl Instrument for DrumKick {
+impl Instrument for Bell {
     fn get_oscilators(&self) -> &Vec<super::InstrumentOscilator> {
         &self.oscillators
     }

@@ -1,8 +1,10 @@
 mod output_device;
 mod output_stream;
-pub mod sound_generator;
+pub mod sample_generator;
 
-use sound_generator::SampleGenerator;
+use std::{thread, sync::mpsc::{self, Receiver}};
+
+use sample_generator::SampleGenerator;
 use output_stream::OutputStream;
 
 pub fn run_synth() {
@@ -14,6 +16,25 @@ pub fn run_synth() {
 
     let generator = SampleGenerator::new(config.sample_rate.0 as u16);
 
+    display_synth();
+
+    let (tx, rx) = mpsc::channel();
+
+    thread::spawn(|| {
+        display_live_information(rx);
+    });
+
+    let _ = OutputStream::new(sample_format)
+        .build(&device, &config, generator)
+        .unwrap()
+        .run();
+}
+
+fn display_synth(){
+    println!("This is a command line synth tool built up from initial mathematical principles");
+    println!("The tool was written using the Rust programming language and you can find it's source code here: ");
+    println!("https://github.com/DaniloDjokic/rust_synth");
+
     let keyboard = "
 |   |   | |   |   |   |   | |   | |   |   |   |   | |   |   |
 |   | 2 | | 3 |   |   | 5 | | 6 | | 7 |   |   | 9 | | 0 |   |
@@ -23,6 +44,7 @@ pub fn run_synth() {
 |_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|";
     
     println!("{keyboard}");
+    println!();
 
     let keyboard = "
 |   |   | |   |   |   |   | |   | |   |   |   |   | |   |   |
@@ -33,9 +55,15 @@ pub fn run_synth() {
 |_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|";
 
     println!("{keyboard}");
+    println!();
+}
 
-    let _ = OutputStream::new(sample_format)
-        .build(&device, &config, generator)
-        .unwrap()
-        .run();
+fn display_live_information(receiver: Receiver<f32>) -> ! {
+    println!("Current sample: 0.0");
+
+    loop {
+        let sample = receiver.recv().unwrap();
+
+        println!("Current sample: {}", sample);
+    }
 }

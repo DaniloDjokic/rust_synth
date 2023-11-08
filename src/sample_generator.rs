@@ -23,6 +23,7 @@ pub struct SampleGenerator {
     time_step: f32,
     receiver: Receiver<InputEventData>,
     instruments: Vec<Box<dyn Instrument + Send>>,
+    pub current_playing_sample: f32,
 }
 
 impl SampleGenerator {
@@ -41,13 +42,19 @@ impl SampleGenerator {
             Box::new(Bell::new(3)),
         ];
 
-        Self { time_step, clock, receiver, instruments }
+        Self { 
+            time_step, 
+            clock, 
+            receiver, 
+            instruments,
+            current_playing_sample: 0.0,
+        }
     }
 
     fn sum_note_samples(&self, note: &mut Note, next_sample: &mut f32) {
         let filtered_instruments: Vec<&Box<dyn Instrument + Send>> = self.instruments.iter()
-        .filter(|i| i.get_channel() == note.channel)
-        .collect();
+            .filter(|i| i.get_channel() == note.channel)
+            .collect();
         
         filtered_instruments.iter().for_each(|e| {
             let sample = e.get_next_sample(*self.clock.read().unwrap(), &note);
@@ -73,6 +80,9 @@ impl Iterator for SampleGenerator {
 
         event_data.notes.retain(|e| e.is_active);
         *self.clock.write().unwrap() += self.time_step;
+
+
+        self.current_playing_sample = next_sample;
 
         Some(next_sample)
     }

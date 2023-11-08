@@ -4,7 +4,7 @@ use cpal::{
 };
 
 use cpal::traits::{DeviceTrait, StreamTrait};
-use crate::sound_generator::SampleGenerator;
+use crate::sample_generator::SampleGenerator;
 
 mod stream_writer;
 

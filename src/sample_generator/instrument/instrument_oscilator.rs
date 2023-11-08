@@ -1,4 +1,4 @@
-use crate::sound_generator::oscilator::{Oscilator, lfo::LFO};
+use crate::sample_generator::oscilator::{Oscilator, lfo::LFO};
 
 pub struct InstrumentOscilator {
     pub oscilator: Oscilator,

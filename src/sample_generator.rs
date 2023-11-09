@@ -10,12 +10,7 @@ use input_listener::InputEventData;
 
 use self::{
     note::Note, 
-    instrument::{
-        Instrument, 
-        bell::Bell, 
-        drum_kick::DrumKick, 
-        drum_snare::DrumSnare
-    }
+    instrument::Instrument
 };
 
 pub struct SampleGenerator {
@@ -28,7 +23,12 @@ pub struct SampleGenerator {
 }
 
 impl SampleGenerator {
-    pub fn new(sample_rate: u16, sender: Sender<f32>) -> Self {
+    pub fn new(
+        sample_rate: u16, 
+        current_sample_sender: Sender<f32>, 
+        instruments: Vec<Box<(dyn Instrument + Send)>>
+    ) -> Self {
+        
         let clock = Arc::new(RwLock::new(0.0));
         let time_step = 1.0 / sample_rate as f32;
 
@@ -37,19 +37,13 @@ impl SampleGenerator {
         let listener = InputListener::new(tx);
         listener.start_listen(Arc::clone(&clock));
 
-        let instruments: Vec<Box<(dyn Instrument + Send)>> = vec![
-            Box::new(DrumKick::new(1)),
-            Box::new(DrumSnare::new(2)),
-            Box::new(Bell::new(3)),
-        ];
-
         Self { 
             master_volume: 0.2,
             time_step, 
             clock, 
             receiver, 
             instruments,
-            sender
+            sender: current_sample_sender
         }
     }
 

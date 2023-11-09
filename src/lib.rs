@@ -1,5 +1,6 @@
 mod output_device;
 mod output_stream;
+mod instrument_loader;
 pub mod sample_generator;
 
 use std::{thread, sync::mpsc::{self, Receiver}, io::Write};
@@ -16,7 +17,11 @@ pub fn run_synth() {
 
     let (tx, rx) = mpsc::channel();
 
-    let generator = SampleGenerator::new(config.sample_rate.0 as u16, tx);
+    let generator = SampleGenerator::new(
+        config.sample_rate.0 as u16,
+        tx,
+        instrument_loader::load_instruments()
+    );
 
     display_synth();
 

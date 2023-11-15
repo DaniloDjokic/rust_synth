@@ -3,9 +3,10 @@ mod output_stream;
 mod instrument_loader;
 pub mod sample_generator;
 
-use std::{thread, sync::mpsc::{self, Receiver}, io::Write};
+use std::{thread, sync::mpsc::{self, Receiver}, io, io::Write };
 
-use sample_generator::SampleGenerator;
+use sample_generator::{SampleGenerator, live_sample_info::LiveSynthInfo};
+use crossterm::{queue, execute, style::Print, cursor, terminal::Clear};
 use output_stream::OutputStream;
 
 pub fn run_synth() {
@@ -23,10 +24,10 @@ pub fn run_synth() {
         instrument_loader::load_instruments()
     );
 
-    display_synth();
+    let _ = display_synth();
 
     thread::spawn(|| {
-        display_live_information(rx);
+        let _ = display_live_information(rx);
     });
 
     let _ = OutputStream::new(sample_format)
@@ -35,23 +36,30 @@ pub fn run_synth() {
         .run();
 }
 
-fn display_synth(){
-    println!("This is a command line synth tool built up from initial mathematical principles");
-    println!("The tool was written using the Rust programming language and you can find it's source code here: ");
-    println!("https://github.com/DaniloDjokic/rust_synth");
+fn display_synth() -> io::Result<()> {
+    let mut stdout = std::io::stdout();
 
-    let keyboard = "
+    let mut keyboard = "
 |   |   | |   |   |   |   | |   | |   |   |   |   | |   |   |
 |   | 2 | | 3 |   |   | 5 | | 6 | | 7 |   |   | 9 | | 0 |   |
 |   |___| |___|   |   |___| |___| |___|   |   |___| |___|   |
 |     |     |     |     |     |     |     |     |     |     |
 |  Q  |  W  |  E  |  R  |  T  |  Y  |  U  |  I  |  O  |  P  |
 |_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|";
-    
-    println!("{keyboard}");
-    println!();
 
-    let keyboard = "
+    let _ = queue!(
+        stdout, 
+        Print("This is a command line synth tool built up from initial mathematical principles"),
+        cursor::MoveToNextLine(1),
+        Print("The tool was written using the Rust programming language and you can find it's source code here: "),
+        cursor::MoveToNextLine(1),
+        Print("https://github.com/DaniloDjokic/rust_synth"),
+        cursor::MoveToNextLine(1),
+        Print(keyboard),
+        cursor::MoveToNextLine(2)
+    )?;
+
+    keyboard = "
 |   |   | |   |   |   |   | |   | |   |   |   |   | |   |   |
 |   | S | | D |   |   | G | | H | | J |   |   | L | | ; |   |
 |   |___| |___|   |   |___| |___| |___|   |   |___| |___|   |
@@ -59,20 +67,43 @@ fn display_synth(){
 |  Z  |  X  |  C  |  V  |  B  |  N  |  M  |  ,  |  .  |  /  |
 |_____|_____|_____|_____|_____|_____|_____|_____|_____|_____|";
 
-    println!("{keyboard}");
-    println!();
+    queue!(
+        stdout,
+        Print(keyboard),
+        cursor::MoveToNextLine(1)
+    )?;
+
+    stdout.flush()?;
+
+    Ok(())
 }
 
-fn display_live_information(receiver: Receiver<f32>) -> ! {
-    print!("Last sample: 0.0");
-    std::io::stdout().flush().unwrap();
+fn display_live_information(receiver: Receiver<LiveSynthInfo>) -> io::Result<()> {
+    let mut stdout = std::io::stdout();
+
+    execute!(
+        stdout,
+        Print("Notes: 0"),
+        cursor::MoveToNextLine(1),
+        Print("Proc time: 0.0"),
+        cursor::Hide
+    )?;
 
     loop {
-        let sample = receiver.recv().unwrap();
+        let live_info = receiver.recv().unwrap();
+
+        queue!(
+            stdout,
+            cursor::MoveUp(1),
+            cursor::MoveToColumn(7),
+            Clear(crossterm::terminal::ClearType::UntilNewLine),
+            Print(live_info.notes_count),
+            cursor::MoveDown(1),
+            cursor::MoveToColumn(11),
+            Clear(crossterm::terminal::ClearType::UntilNewLine),
+            Print(format!("{:.3}", live_info.proc_time)),
+        )?;
         
-        if sample > 0.00001 {
-            print!("\r");
-            print!("Last sample: {}", sample);        
-        }
+        stdout.flush()?;
     }
 }

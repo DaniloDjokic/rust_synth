@@ -2,6 +2,7 @@ mod oscilator;
 mod input_listener;
 mod note;
 mod adsr_envelope;
+pub mod live_sample_info;
 pub mod instrument;
 
 use std::sync::{mpsc::{self, Receiver, Sender}, Arc, RwLock};
@@ -10,22 +11,23 @@ use input_listener::InputEventData;
 
 use self::{
     note::Note, 
-    instrument::Instrument
+    instrument::Instrument, live_sample_info::LiveSynthInfo
 };
 
 pub struct SampleGenerator {
     clock: Arc<RwLock<f32>>,
+    wall_time: f32,
     time_step: f32,
     master_volume: f32,
     receiver: Receiver<InputEventData>,
     instruments: Vec<Box<dyn Instrument + Send>>,
-    sender: Sender<f32>,
+    sender: Sender<LiveSynthInfo>,
 }
 
 impl SampleGenerator {
     pub fn new(
         sample_rate: u16, 
-        current_sample_sender: Sender<f32>, 
+        live_info_sender: Sender<LiveSynthInfo>, 
         instruments: Vec<Box<(dyn Instrument + Send)>>
     ) -> Self {
         
@@ -41,9 +43,10 @@ impl SampleGenerator {
             master_volume: 0.2,
             time_step, 
             clock, 
+            wall_time: 0.0,
             receiver, 
             instruments,
-            sender: current_sample_sender
+            sender: live_info_sender
         }
     }
 
@@ -79,7 +82,13 @@ impl Iterator for SampleGenerator {
         event_data.notes.retain(|e| e.is_active);
         *self.clock.write().unwrap() += self.time_step;
 
-        self.sender.send(next_sample).unwrap();
+        let live_info = LiveSynthInfo::new(
+            event_data.notes.iter().count(),
+            *self.clock.read().unwrap(),
+            0.0
+        );
+
+        self.sender.send(live_info).unwrap();
 
         Some(next_sample)
     }

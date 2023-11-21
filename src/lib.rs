@@ -5,7 +5,7 @@ pub mod sample_generator;
 
 use std::{thread, sync::mpsc::{self, Receiver}, io, io::Write };
 
-use sample_generator::{SampleGenerator, live_sample_info::LiveSynthInfo};
+use sample_generator::{SampleGenerator, live_info::{LivePerformanceInfo, LiveNoteInfo}};
 use crossterm::{queue, execute, style::Print, cursor, terminal::Clear};
 use output_stream::OutputStream;
 
@@ -16,18 +16,20 @@ pub fn run_synth() {
     let sample_format = supported_config.sample_format();
     let config = supported_config.config();
 
-    let (tx, rx) = mpsc::channel();
+    let (performance_tx, performance_rx) = mpsc::channel();
+    let (note_tx, note_rx) = mpsc::channel();
 
     let generator = SampleGenerator::new(
         config.sample_rate.0 as u16,
-        tx,
+        performance_tx,
+        note_tx,
         instrument_loader::load_instruments()
     );
 
     let _ = display_synth();
 
     thread::spawn(|| {
-        let _ = display_live_information(rx);
+        let _ = display_live_information(performance_rx, note_rx);
     });
 
     let _ = OutputStream::new(sample_format)
@@ -78,7 +80,7 @@ fn display_synth() -> io::Result<()> {
     Ok(())
 }
 
-fn display_live_information(receiver: Receiver<LiveSynthInfo>) -> io::Result<()> {
+fn display_live_information(performance_rx: Receiver<LivePerformanceInfo>, note_rx: Receiver<LiveNoteInfo>) -> io::Result<()> {
     let mut stdout = std::io::stdout();
 
     execute!(
@@ -90,18 +92,24 @@ fn display_live_information(receiver: Receiver<LiveSynthInfo>) -> io::Result<()>
     )?;
 
     loop {
-        let live_info = receiver.recv().unwrap();
+        let performance_info = performance_rx.recv().unwrap();
+        let note_info = note_rx.try_recv();
+
+        let note_count = match note_info {
+            Ok(info) => info.note_count,
+            Err(_e) => 0
+        };
 
         queue!(
             stdout,
             cursor::MoveUp(1),
             cursor::MoveToColumn(7),
             Clear(crossterm::terminal::ClearType::UntilNewLine),
-            Print(live_info.notes_count),
+            Print(note_count),
             cursor::MoveDown(1),
             cursor::MoveToColumn(11),
             Clear(crossterm::terminal::ClearType::UntilNewLine),
-            Print(format!("{:.3}", live_info.proc_time)),
+            Print(format!("{:.3}", performance_info.proc_time)),
         )?;
         
         stdout.flush()?;

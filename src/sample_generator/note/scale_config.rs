@@ -2,7 +2,7 @@ use rdev::Key;
 
 use super::Note;
 
-pub fn get_note_for_key(key: &Key) -> Option<(i32, usize)> {
+pub fn get_scale_id_for_key(key: &Key) -> Option<(i32, usize)> {
     match key {
         Key::KeyQ => Some((0, 1)), //C
         Key::Num2 => Some((0, 1)), //C#

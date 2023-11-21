@@ -71,6 +71,8 @@ impl NoteCollection {
             });
         }
 
+        self.notes.retain(|n| n.is_active);
+
         next_sample
     }
 }

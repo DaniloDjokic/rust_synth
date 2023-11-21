@@ -72,6 +72,8 @@ impl Iterator for SampleGenerator {
             Err(_e) => ()
         }
 
+        println!("{:?}", self.note_collection.notes);
+
         if !self.note_collection.is_empty() {
             let note_count = self.note_collection.count();
             self.note_info_tx.send(LiveNoteInfo { note_count: note_count as u32 }).unwrap();

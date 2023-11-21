@@ -32,13 +32,13 @@ impl NoteCollection {
 
     fn refresh_same_note(note: &mut Note, sequence_time: f32) {
         if note.time_deactivated > note.time_activated {
-            note.time_activated = sequence_time;
+            note.time_activated = Some(sequence_time);
             note.is_active = true;
         }
     }
 
     fn add_new_note(&mut self, mut note: Note, sequence_time: f32) {
-        note.time_activated = sequence_time;
+        note.time_activated = Some(sequence_time);
         self.notes.push(note);
     }
 
@@ -48,7 +48,7 @@ impl NoteCollection {
 
         if let Some(existing_note) = existing_note {
             if existing_note.time_deactivated < existing_note.time_activated {
-                existing_note.time_deactivated = sequence_time;
+                existing_note.time_deactivated = Some(sequence_time);
             }
         }
     }

@@ -8,9 +8,9 @@ pub mod instrument;
 
 use std::sync::{mpsc::{self, Receiver, Sender}, Arc, RwLock};
 use input_listener::InputListener;
-use input_listener::InputEventData;
+use input_listener::models::InputEventData;
 
-use self::{instrument::Instrument, live_info::{LivePerformanceInfo, LiveNoteInfo}, note_collection::NoteCollection, input_listener::InputEventType};
+use self::{instrument::Instrument, live_info::{LivePerformanceInfo, LiveNoteInfo}, note_collection::NoteCollection, input_listener::models::InputEventType};
 
 pub struct SampleGenerator {
     clock: Arc<RwLock<f32>>,
@@ -59,15 +59,18 @@ impl Iterator for SampleGenerator {
     type Item = f32;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let event_data = self.receiver.recv().unwrap();
+        let event_data = self.receiver.try_recv();
 
-        match event_data.event {
-            InputEventType::Press => self.note_collection.note_pressed(event_data.note, event_data.time),
-            InputEventType::Release => self.note_collection.note_released(event_data.note, event_data.time),
-            _ => (),
+        match event_data {
+            Ok(event_data) => {
+                match event_data.event {
+                    InputEventType::Press => self.note_collection.note_pressed(event_data.note, event_data.time),
+                    InputEventType::Release => self.note_collection.note_released(event_data.note, event_data.time),
+                    _ => (),
+                }
+            },
+            Err(_e) => ()
         }
-
-        println!("{:?}", self.note_collection.notes);
 
         if !self.note_collection.is_empty() {
             let note_count = self.note_collection.count();

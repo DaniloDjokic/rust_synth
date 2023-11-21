@@ -3,14 +3,14 @@ pub mod scale_config;
 #[derive(PartialEq, Clone, Debug)]
 pub struct Note {
     pub scale_id : i32,
-    pub time_activated: f32,
-    pub time_deactivated: f32,
+    pub time_activated: Option<f32>,
+    pub time_deactivated: Option<f32>,
     pub is_active: bool,
     pub channel: usize,
 }
 
 impl Note {
-    pub fn new(scale_id: i32, time_activated: f32, time_deactivated: f32, channel: usize) -> Note {
+    pub fn new(scale_id: i32, time_activated: Option<f32>, time_deactivated: Option<f32>, channel: usize) -> Note {
         Self {
             scale_id,
             time_activated,

@@ -14,8 +14,13 @@ pub trait Instrument {
     fn get_channel(&self) -> usize;
 
     fn get_next_sample(&self, time: f32, note: &Note) -> Option<f32> {
-        let amplitude = self.get_envelope()
-            .get_amplitude(time, note.time_activated, note.time_deactivated);
+        let amplitude = self
+            .get_envelope()
+            .get_amplitude(
+                time,
+                note.time_activated.unwrap_or_default(),
+                note.time_deactivated.unwrap_or_default()
+            );
 
         if amplitude <= 0.0 { 
             return None; 

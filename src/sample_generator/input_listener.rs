@@ -1,22 +1,13 @@
 mod io_listener;
+pub mod models;
 use std::sync::{RwLock, Arc};
 use std::thread::{self, JoinHandle};
 use std::sync::mpsc::{self, SyncSender, Receiver};
 use rdev::{EventType, Key};
+use self::models::{InputEventData, InputEventType};
+
 use super::note::scale_config::get_scale_id_for_key;
 use super::note::Note;
-
-pub enum InputEventType {
-    Press,
-    Release,
-    Unknown
-}
-
-pub struct InputEventData {
-    pub note: Note,
-    pub time: f32,
-    pub event: InputEventType,
-}
 
 pub struct InputListener {
     sender: SyncSender<InputEventData>,
@@ -31,14 +22,11 @@ impl InputListener {
         thread::spawn(move || {
             let (tx, rx) = mpsc::channel();
             io_listener::io_listen(tx, clock);
-
-            let sequence_time: f32 = 0.0;
-
-            self.handle_events(sequence_time, rx);
+            self.handle_events(rx);
         })
     }
 
-    fn handle_events(&self, sequence_time: f32, rx: Receiver<(EventType, f32)>) {
+    fn handle_events(&self, rx: Receiver<(EventType, f32)>) {
         loop {
             let mut note = None;
             let mut event_type = InputEventType::Unknown;
@@ -55,15 +43,15 @@ impl InputListener {
                     }
                     _ => ()
                 };
-            }
 
-            if let Some(note) = note {
-                self.sender.send(InputEventData {
-                    note, 
-                    time: sequence_time,
-                    event: event_type
-                })
-                .unwrap();  
+                if let Some(note) = note {
+                    self.sender.send(InputEventData {
+                        note, 
+                        time: time,
+                        event: event_type
+                    })
+                    .unwrap();  
+                }
             }
         }
     }
@@ -72,8 +60,8 @@ impl InputListener {
         if let Some((scale_id, channel)) = get_scale_id_for_key(&key) {
             Some(Note::new(
                 scale_id, 
-                sequence_time,
-                0.0,
+                Some(sequence_time),
+                None,
                 channel
             ))
         }
@@ -88,8 +76,8 @@ impl InputListener {
         if let Some((scale_id, channel)) = scale_id {
             Some(Note::new(
                 scale_id, 
-                sequence_time,
-                0.0,
+                None,
+                Some(sequence_time),
                 channel
             ))
         } 

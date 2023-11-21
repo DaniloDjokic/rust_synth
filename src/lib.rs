@@ -26,11 +26,11 @@ pub fn run_synth() {
         instrument_loader::load_instruments()
     );
 
-    let _ = display_synth();
+    // let _ = display_synth();
 
-    thread::spawn(|| {
-        let _ = display_live_information(performance_rx, note_rx);
-    });
+    // thread::spawn(|| {
+    //     let _ = display_live_information(performance_rx, note_rx);
+    // });
 
     let _ = OutputStream::new(sample_format)
         .build(&device, &config, generator)
@@ -38,7 +38,7 @@ pub fn run_synth() {
         .run();
 }
 
-fn display_synth() -> io::Result<()> {
+fn _display_synth() -> io::Result<()> {
     let mut stdout = std::io::stdout();
 
     let mut keyboard = "
@@ -80,7 +80,7 @@ fn display_synth() -> io::Result<()> {
     Ok(())
 }
 
-fn display_live_information(performance_rx: Receiver<LivePerformanceInfo>, note_rx: Receiver<LiveNoteInfo>) -> io::Result<()> {
+fn _display_live_information(performance_rx: Receiver<LivePerformanceInfo>, note_rx: Receiver<LiveNoteInfo>) -> io::Result<()> {
     let mut stdout = std::io::stdout();
 
     execute!(

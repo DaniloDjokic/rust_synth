@@ -22,7 +22,7 @@ pub trait Instrument {
                 note.time_deactivated.unwrap_or_default()
             );
 
-        if amplitude <= 0.0 { 
+        if amplitude <= 0.01 { 
             return None; 
         }
 

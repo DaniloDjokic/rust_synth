@@ -15,7 +15,7 @@ impl Bell {
         let env = ADSREnvelope::new(
             0.01,
             1.0,
-            1.0,
+            0.75,
             1.0,
             0.0
         );

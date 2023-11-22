@@ -91,13 +91,18 @@ fn display_live_information(performance_rx: Receiver<LivePerformanceInfo>, note_
         cursor::Hide
     )?;
 
+    let mut last_note_count = 0;
+
     loop {
         let performance_info = performance_rx.recv().unwrap();
         let note_info = note_rx.try_recv();
 
         let note_count = match note_info {
-            Ok(info) => info.note_count,
-            Err(_e) => 0
+            Ok(info) => {
+                last_note_count = info.note_count;
+                info.note_count
+            },
+            Err(_e) => last_note_count
         };
 
         queue!(

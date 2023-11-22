@@ -6,7 +6,7 @@ mod adsr_envelope;
 pub mod live_info;
 pub mod instrument;
 
-use std::sync::{mpsc::{self, Receiver, Sender}, Arc, RwLock};
+use std::sync::{mpsc::{self, Receiver, Sender, SyncSender}, Arc, RwLock};
 use input_listener::InputListener;
 use input_listener::models::InputEventData;
 
@@ -50,7 +50,7 @@ impl SampleGenerator {
             instruments,
             receiver, 
             performance_info_tx,
-            note_info_tx
+            note_info_tx,
         }
     }
 }
@@ -72,11 +72,8 @@ impl Iterator for SampleGenerator {
             Err(_e) => ()
         }
 
-        println!("{:?}", self.note_collection.notes);
-
-        if !self.note_collection.is_empty() {
-            let note_count = self.note_collection.count();
-            self.note_info_tx.send(LiveNoteInfo { note_count: note_count as u32 }).unwrap();
+        if let Some(len) = self.note_collection.has_len_change() {
+            self.note_info_tx.send(LiveNoteInfo { note_count: len as u32 }).unwrap();
         }
 
         let mut next_sample = self.note_collection.sum_note_samples(&self.instruments);

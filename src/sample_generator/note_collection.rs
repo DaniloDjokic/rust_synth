@@ -3,21 +3,29 @@ use std::sync::{Arc, RwLock};
 use super::{note::Note, instrument::Instrument};
 
 pub struct NoteCollection {
-    pub notes: Vec<Note>,
+    notes: Vec<Note>,
+    current_count: usize,
     clock: Arc<RwLock<f32>>,
 }
 
 impl NoteCollection {
     pub fn new(clock: Arc<RwLock<f32>>) -> Self {
-        Self { notes: vec![], clock }
+        Self { 
+            notes: vec![],
+            current_count: 0, 
+            clock 
+        }
     }
 
-    pub fn count(&self) -> usize {
-        self.notes.len()
-    }
+    pub fn has_len_change(&mut self) -> Option<usize> {
+        let len = self.notes.len();
 
-    pub fn is_empty(&self) -> bool {
-        self.notes.is_empty()
+        if len != self.current_count {
+            self.current_count = len;
+            return Some(len);
+        }
+
+        None
     }
 
     pub fn note_pressed(&mut self, note: Note, sequence_time: f32) {
@@ -62,7 +70,7 @@ impl NoteCollection {
             .collect::<Vec<&Box<dyn Instrument + Send>>>();
 
             filtered_instruments.iter().for_each(|e| {
-                let sample = e.get_next_sample(*self.clock.read().unwrap(), &note);
+                let sample = e.get_next_sample(*self.clock.read().unwrap(), note);
 
                 match sample {
                     Some(sample) => next_sample += sample,

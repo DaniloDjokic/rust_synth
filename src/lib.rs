@@ -72,7 +72,7 @@ fn display_synth() -> io::Result<()> {
     queue!(
         stdout,
         Print(keyboard),
-        cursor::MoveToNextLine(1)
+        cursor::MoveToNextLine(2)
     )?;
 
     stdout.flush()?;
@@ -88,6 +88,10 @@ fn display_live_information(performance_rx: Receiver<LivePerformanceInfo>, note_
         Print("Notes: 0"),
         cursor::MoveToNextLine(1),
         Print("Proc time: 0.0"),
+        cursor::MoveToNextLine(1),
+        Print("Wall time: 0.0"),
+        cursor::MoveToNextLine(1),
+        Print("Latency: 0.0"),
         cursor::Hide
     )?;
 
@@ -107,7 +111,7 @@ fn display_live_information(performance_rx: Receiver<LivePerformanceInfo>, note_
 
         queue!(
             stdout,
-            cursor::MoveUp(1),
+            cursor::MoveUp(3),
             cursor::MoveToColumn(7),
             Clear(crossterm::terminal::ClearType::UntilNewLine),
             Print(note_count),
@@ -115,6 +119,14 @@ fn display_live_information(performance_rx: Receiver<LivePerformanceInfo>, note_
             cursor::MoveToColumn(11),
             Clear(crossterm::terminal::ClearType::UntilNewLine),
             Print(format!("{:.3}", performance_info.proc_time)),
+            cursor::MoveDown(1),
+            cursor::MoveToColumn(11),
+            Clear(crossterm::terminal::ClearType::UntilNewLine),
+            Print(format!("{:.3}", performance_info.real_time)),
+            cursor::MoveDown(1),
+            cursor::MoveToColumn(9),
+            Clear(crossterm::terminal::ClearType::UntilNewLine),
+            Print(format!("{:.3}", performance_info.latency())),
         )?;
         
         stdout.flush()?;

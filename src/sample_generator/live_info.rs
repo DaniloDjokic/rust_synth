@@ -10,6 +10,10 @@ impl LivePerformanceInfo {
             real_time, 
         }
     }
+
+    pub fn latency(&self) -> f32 {
+        self.real_time - self.proc_time
+    }
 }
 
 pub struct LiveNoteInfo {

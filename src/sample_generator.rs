@@ -6,7 +6,7 @@ mod adsr_envelope;
 pub mod live_info;
 pub mod instrument;
 
-use std::sync::{mpsc::{self, Receiver, Sender, SyncSender}, Arc, RwLock};
+use std::{sync::{mpsc::{self, Receiver, Sender }, Arc, RwLock}, time::SystemTime};
 use input_listener::InputListener;
 use input_listener::models::InputEventData;
 
@@ -14,7 +14,7 @@ use self::{instrument::Instrument, live_info::{LivePerformanceInfo, LiveNoteInfo
 
 pub struct SampleGenerator {
     clock: Arc<RwLock<f32>>,
-    _wall_time: f32,
+    wall_time_timestamp: SystemTime, 
     time_step: f32,
     master_volume: f32,
     note_collection: NoteCollection,
@@ -45,7 +45,7 @@ impl SampleGenerator {
             master_volume: 0.2,
             time_step, 
             clock, 
-            _wall_time: 0.0,
+            wall_time_timestamp: SystemTime::now(),
             note_collection,
             instruments,
             receiver, 
@@ -81,10 +81,15 @@ impl Iterator for SampleGenerator {
         next_sample *= self.master_volume;
 
         *self.clock.write().unwrap() += self.time_step;
+        
+        let real_time_passed = SystemTime::now()
+            .duration_since(self.wall_time_timestamp)
+            .unwrap();
+
 
         let live_info = LivePerformanceInfo::new(
             *self.clock.read().unwrap(),
-            0.0
+            real_time_passed.as_secs_f32()
         );
 
         self.performance_info_tx.send(live_info).unwrap();

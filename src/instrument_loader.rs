@@ -25,3 +25,7 @@ pub fn load_instruments() -> Vec<Box<(dyn Instrument + Send)>> {
 
     instruments
 }
+
+pub fn instrument_input_channel() -> usize {
+    3
+}

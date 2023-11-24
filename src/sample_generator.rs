@@ -1,16 +1,19 @@
 mod oscilator;
-mod input_listener;
-mod note;
 mod note_collection;
 mod adsr_envelope;
 pub mod live_info;
 pub mod instrument;
-
-use std::{sync::{mpsc::{self, Receiver, Sender }, Arc, RwLock}, time::SystemTime};
-use input_listener::InputListener;
-use input_listener::models::InputEventData;
-
-use self::{instrument::Instrument, live_info::{LivePerformanceInfo, LiveNoteInfo}, note_collection::NoteCollection, input_listener::models::InputEventType};
+pub mod note;
+use std::{sync::{mpsc::{Receiver, Sender }, Arc, RwLock}, time::SystemTime};
+use crate::input::input_listener::{models::{InputEventData, InputEventType}, InputListener};
+use self::{
+    instrument::Instrument, 
+    live_info::{
+        LivePerformanceInfo, 
+        LiveNoteInfo
+    }, 
+    note_collection::NoteCollection, 
+};
 
 pub struct SampleGenerator {
     clock: Arc<RwLock<f32>>,
@@ -19,7 +22,7 @@ pub struct SampleGenerator {
     master_volume: f32,
     note_collection: NoteCollection,
     instruments: Vec<Box<dyn Instrument + Send>>,
-    receiver: Receiver<InputEventData>,
+    input_receiver: Receiver<InputEventData>,
     performance_info_tx: Sender<LivePerformanceInfo>,
     note_info_tx: Sender<LiveNoteInfo>,
 }
@@ -29,16 +32,15 @@ impl SampleGenerator {
         sample_rate: u16, 
         performance_info_tx: Sender<LivePerformanceInfo>, 
         note_info_tx: Sender<LiveNoteInfo>,
-        instruments: Vec<Box<(dyn Instrument + Send)>>
+        instruments: Vec<Box<(dyn Instrument + Send)>>,
+        listener: InputListener,
+        input_receiver: Receiver<InputEventData>,
     ) -> Self {
         let clock = Arc::new(RwLock::new(0.0));
         let time_step = 1.0 / sample_rate as f32;
 
         let note_collection = NoteCollection::new(Arc::clone(&clock));
 
-        let (tx, receiver) = mpsc::sync_channel(2);
-
-        let listener = InputListener::new(tx);
         listener.start_listen(Arc::clone(&clock));
 
         Self { 
@@ -48,7 +50,7 @@ impl SampleGenerator {
             wall_time_timestamp: SystemTime::now(),
             note_collection,
             instruments,
-            receiver, 
+            input_receiver, 
             performance_info_tx,
             note_info_tx,
         }
@@ -59,7 +61,7 @@ impl Iterator for SampleGenerator {
     type Item = f32;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let event_data = self.receiver.try_recv();
+        let event_data = self.input_receiver.try_recv();
 
         match event_data {
             Ok(event_data) => {

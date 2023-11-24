@@ -4,18 +4,22 @@ use std::sync::{RwLock, Arc};
 use std::thread::{self, JoinHandle};
 use std::sync::mpsc::{self, SyncSender, Receiver};
 use rdev::{EventType, Key};
-use self::models::{InputEventData, InputEventType};
+use crate::sample_generator::note::Note;
+use crate::sample_generator::note::scale_config::get_scale_id_for_key;
 
-use super::note::scale_config::get_scale_id_for_key;
-use super::note::Note;
+use self::models::{InputEventData, InputEventType};
 
 pub struct InputListener {
     sender: SyncSender<InputEventData>,
+    channel: usize,
 }
 
 impl InputListener {
-    pub fn new(sender: SyncSender<InputEventData>) -> Self {
-        Self { sender }
+    pub fn new(
+        sender: SyncSender<InputEventData>,
+        channel: usize,
+    ) -> Self {
+        Self { sender, channel }
     }
 
     pub fn start_listen(self, clock: Arc<RwLock<f32>>) -> JoinHandle<()> {
@@ -57,12 +61,12 @@ impl InputListener {
     }
 
     fn handle_key_press(&self, key: Key, sequence_time: f32) -> Option<Note> {
-        if let Some((scale_id, channel)) = get_scale_id_for_key(&key) {
+        if let Some(scale_id) = get_scale_id_for_key(&key) {
             Some(Note::new(
                 scale_id, 
                 Some(sequence_time),
                 None,
-                channel
+                self.channel
             ))
         }
         else { 
@@ -73,12 +77,12 @@ impl InputListener {
     fn handle_key_release(&self, key: Key, sequence_time: f32) -> Option<Note> {
         let scale_id = get_scale_id_for_key(&key);
 
-        if let Some((scale_id, channel)) = scale_id {
+        if let Some(scale_id) = scale_id {
             Some(Note::new(
                 scale_id, 
                 None,
                 Some(sequence_time),
-                channel
+                self.channel
             ))
         } 
         else {

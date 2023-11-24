@@ -1,10 +1,12 @@
 mod output_device;
 mod output_stream;
 mod instrument_loader;
-pub mod sample_generator;
+mod sample_generator;
+mod input;
 
 use std::{thread, sync::mpsc::{self, Receiver}, io, io::Write };
 
+use input::input_listener::InputListener;
 use sample_generator::{SampleGenerator, live_info::{LivePerformanceInfo, LiveNoteInfo}};
 use crossterm::{queue, execute, style::Print, cursor, terminal::Clear};
 use output_stream::OutputStream;
@@ -19,11 +21,20 @@ pub fn run_synth() {
     let (performance_tx, performance_rx) = mpsc::channel();
     let (note_tx, note_rx) = mpsc::channel();
 
+    let (tx, rx) = mpsc::sync_channel(3);
+
+    let input_listener = InputListener::new(
+        tx,
+        instrument_loader::instrument_input_channel()
+    );
+
     let generator = SampleGenerator::new(
         config.sample_rate.0 as u16,
         performance_tx,
         note_tx,
-        instrument_loader::load_instruments()
+        instrument_loader::load_instruments(),
+        input_listener,
+        rx
     );
 
     let _ = display_synth();

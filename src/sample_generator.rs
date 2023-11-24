@@ -4,8 +4,8 @@ mod adsr_envelope;
 pub mod live_info;
 pub mod instrument;
 pub mod note;
-use std::{sync::{mpsc::{Receiver, Sender }, Arc, RwLock}, time::SystemTime};
-use crate::input::input_listener::{models::{InputEventData, InputEventType}, InputListener};
+use std::sync::{mpsc::{Receiver, Sender }, Arc, RwLock};
+use crate::input::{input_listener::{models::{InputEventData, InputEventType}, InputListener}, clock::Clock};
 use self::{
     instrument::Instrument, 
     live_info::{
@@ -16,8 +16,8 @@ use self::{
 };
 
 pub struct SampleGenerator {
-    clock: Arc<RwLock<f32>>,
-    wall_time_timestamp: SystemTime, 
+    proc_clock: Arc<RwLock<f32>>,
+    clock: Clock,
     time_step: f32,
     master_volume: f32,
     note_collection: NoteCollection,
@@ -29,6 +29,7 @@ pub struct SampleGenerator {
 
 impl SampleGenerator {
     pub fn new(
+        clock: Clock,
         sample_rate: u16, 
         performance_info_tx: Sender<LivePerformanceInfo>, 
         note_info_tx: Sender<LiveNoteInfo>,
@@ -36,18 +37,17 @@ impl SampleGenerator {
         listener: InputListener,
         input_receiver: Receiver<InputEventData>,
     ) -> Self {
-        let clock = Arc::new(RwLock::new(0.0));
         let time_step = 1.0 / sample_rate as f32;
 
-        let note_collection = NoteCollection::new(Arc::clone(&clock));
+        let note_collection = NoteCollection::new(clock.proc_clock());
 
-        listener.start_listen(Arc::clone(&clock));
+        listener.start_listen(clock.proc_clock());
 
         Self { 
+            proc_clock: clock.proc_clock(),
+            clock,
             master_volume: 0.2,
             time_step, 
-            clock, 
-            wall_time_timestamp: SystemTime::now(),
             note_collection,
             instruments,
             input_receiver, 
@@ -82,16 +82,13 @@ impl Iterator for SampleGenerator {
 
         next_sample *= self.master_volume;
 
-        *self.clock.write().unwrap() += self.time_step;
+        *self.proc_clock.write().unwrap() += self.time_step;
         
-        let real_time_passed = SystemTime::now()
-            .duration_since(self.wall_time_timestamp)
-            .unwrap();
-
+        let real_time_passed = self.clock.real_time_passed();
 
         let live_info = LivePerformanceInfo::new(
-            *self.clock.read().unwrap(),
-            real_time_passed.as_secs_f32()
+            *self.proc_clock.read().unwrap(),
+            real_time_passed
         );
 
         self.performance_info_tx.send(live_info).unwrap();

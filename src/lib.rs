@@ -3,10 +3,11 @@ mod output_stream;
 mod instrument_loader;
 mod sample_generator;
 mod input;
+mod sequencer;
 
 use std::{thread, sync::mpsc::{self, Receiver}, io, io::Write };
 
-use input::input_listener::InputListener;
+use input::{input_listener::InputListener, clock::Clock};
 use sample_generator::{SampleGenerator, live_info::{LivePerformanceInfo, LiveNoteInfo}};
 use crossterm::{queue, execute, style::Print, cursor, terminal::Clear};
 use output_stream::OutputStream;
@@ -28,7 +29,10 @@ pub fn run_synth() {
         instrument_loader::instrument_input_channel()
     );
 
+    let clock = Clock::new();
+
     let generator = SampleGenerator::new(
+        clock,
         config.sample_rate.0 as u16,
         performance_tx,
         note_tx,

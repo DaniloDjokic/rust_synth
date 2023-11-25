@@ -61,13 +61,13 @@ impl NoteCollection {
         }
     }
 
-    pub fn sum_note_samples(&mut self, instruments: &Vec<Box<dyn Instrument + Send>>) -> f32 {
+    pub fn sum_note_samples(&mut self, instruments: &Vec<Arc<dyn Instrument + Send + Sync>>) -> f32 {
         let mut next_sample: f32 = 0.0;
 
         for note in self.notes.iter_mut() {
             let filtered_instruments = instruments.iter()
             .filter(|i| i.get_channel() == note.channel)
-            .collect::<Vec<&Box<dyn Instrument + Send>>>();
+            .collect::<Vec<&Arc<dyn Instrument + Send + Sync>>>();
 
             filtered_instruments.iter().for_each(|e| {
                 let sample = e.get_next_sample(*self.clock.read().unwrap(), note);

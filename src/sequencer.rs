@@ -1,7 +1,9 @@
-use crate::{sample_generator::note::Note, input::clock::Clock};
+use std::sync::Arc;
+
+use crate::{sample_generator::{note::Note, instrument::Instrument}, input::clock::Clock, channel::Channel};
 
 pub struct Sequencer {
-    clock: Clock,
+    clock: Arc<Clock>,
     tempo: f32,
     beats: usize,
     sub_beats: usize,
@@ -13,13 +15,8 @@ pub struct Sequencer {
     channels: Vec<Channel>,
 }
 
-struct Channel {
-    channel_id: usize,
-    beat_sign: String,
-}
-
 impl Sequencer {
-    pub fn new(clock: Clock, tempo: f32, beats: usize, sub_beats: usize) -> Self {
+    pub fn new(clock: Arc<Clock>, tempo: f32, beats: usize, sub_beats: usize) -> Self {
         Self {
             clock,
             tempo,
@@ -32,6 +29,14 @@ impl Sequencer {
             notes: vec![],
             channels: vec![],
         }
+    }
+
+    pub fn add_instrument(&mut self, instrument: Arc<dyn Instrument>, instrument_sequence: String) {
+        let channel_id = instrument.get_channel();
+        let mut channel = Channel::new(instrument, channel_id);
+        
+        channel.set_beats(instrument_sequence);
+        self.channels.push(channel);
     }
 
     pub fn get_next_notes(&mut self) -> Vec<Note> {
@@ -48,14 +53,14 @@ impl Sequencer {
             }
 
             for channel in self.channels.iter() {
-                if channel.beat_sign.eq_ignore_ascii_case("L") {
+                if channel.is_beat_active() {
                     self.notes.push(
                         Note { 
                             scale_id: 64, 
                             time_activated: Some(*self.clock.proc_clock().read().unwrap()), 
                             time_deactivated: None, 
                             is_active: true, 
-                            channel: channel.channel_id 
+                            channel: channel.channel_id() 
                         }
                     )
                 }

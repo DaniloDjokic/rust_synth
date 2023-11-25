@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fs};
+use std::{collections::HashMap, fs, sync::Arc};
 use toml;
 
 use crate::sample_generator::instrument::{
@@ -8,17 +8,17 @@ use crate::sample_generator::instrument::{
     bell::Bell
 };
 
-pub fn load_instruments() -> Vec<Box<(dyn Instrument + Send)>> {
+pub fn load_instruments() -> Vec<Arc<dyn Instrument + Send + Sync>> {
     let config_str: String = fs::read_to_string("./instruments.toml").expect("Cannot find file path");
     let config: HashMap<String, i32> = toml::from_str(&config_str).expect("Cannot parse file");
 
-    let mut instruments: Vec<Box<(dyn Instrument + Send)>> = vec![];
+    let mut instruments: Vec<Arc<dyn Instrument + Send + Sync>> = vec![];
 
     config.into_iter().for_each(|(k,v)| {
         match k.as_str() {
-            "kick" => instruments.push(Box::new(DrumKick::new(v as usize))),
-            "snare" => instruments.push(Box::new(DrumSnare::new(v as usize))),
-            "bell" => instruments.push(Box::new(Bell::new(v as usize))),
+            "kick" => instruments.push(Arc::new(DrumKick::new(v as usize))),
+            "snare" => instruments.push(Arc::new(DrumSnare::new(v as usize))),
+            "bell" => instruments.push(Arc::new(Bell::new(v as usize))),
             _ => (),
         }
     });

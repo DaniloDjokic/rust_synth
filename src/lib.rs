@@ -2,17 +2,20 @@ mod output_device;
 mod output_stream;
 mod instrument_loader;
 mod sample_generator;
-mod input;
+pub mod input;
+mod channel;
 mod sequencer;
 
-use std::{thread, sync::mpsc::{self, Receiver}, io, io::Write };
+use std::{thread, sync::{mpsc::{self, Receiver}, Arc}, io, io::Write, collections::HashMap };
 
 use input::{input_listener::InputListener, clock::Clock};
-use sample_generator::{SampleGenerator, live_info::{LivePerformanceInfo, LiveNoteInfo}};
+use sample_generator::{SampleGenerator, live_info::{LivePerformanceInfo, LiveNoteInfo}, instrument::Instrument};
 use crossterm::{queue, execute, style::Print, cursor, terminal::Clear};
 use output_stream::OutputStream;
+use sequencer::Sequencer;
 
 pub fn run_synth() {
+    let clock = Arc::new(Clock::new());
     let device = output_device::init_device();
     let supported_config = output_device::init_supported_config(&device);
 
@@ -22,29 +25,31 @@ pub fn run_synth() {
     let (performance_tx, performance_rx) = mpsc::channel();
     let (note_tx, note_rx) = mpsc::channel();
 
-    let (tx, rx) = mpsc::sync_channel(3);
+    let (input_tx, input_rx) = mpsc::sync_channel(3);
 
     let input_listener = InputListener::new(
-        tx,
+        input_tx,
         instrument_loader::instrument_input_channel()
     );
 
-    let clock = Clock::new();
+    let instruments = instrument_loader::load_instruments();
+    init_sequencer(clock.clone(), &instruments);
 
     let generator = SampleGenerator::new(
-        clock,
+        clock.clone(),
         config.sample_rate.0 as u16,
         performance_tx,
         note_tx,
-        instrument_loader::load_instruments(),
+        instruments,
         input_listener,
-        rx
+        input_rx
     );
 
     let _ = display_synth();
 
     thread::spawn(|| {
         let _ = display_live_information(performance_rx, note_rx);
+        let _ = display_sequencer();
     });
 
     let _ = OutputStream::new(sample_format)
@@ -146,4 +151,28 @@ fn display_live_information(performance_rx: Receiver<LivePerformanceInfo>, note_
         
         stdout.flush()?;
     }
+}
+
+fn init_sequencer(clock: Arc<Clock>, instruments: &Vec<Arc<dyn Instrument + Send + Sync>>) {
+    let mut sequencer = Sequencer::new(
+        clock,
+        90.0, 
+        4, 
+        4
+    );
+
+    let channel_sequence = HashMap::from([
+        (1, "X...X...X..X.X.."),
+        (2, "..X...X...X...X."),
+    ]);
+
+    for inst in instruments.clone() {
+        let channel = inst.get_channel() as usize;
+        let beats = channel_sequence.get(&channel).unwrap();
+        sequencer.add_instrument(inst.clone(), String::from(*beats));
+    }    
+}
+
+fn display_sequencer() {
+    
 }

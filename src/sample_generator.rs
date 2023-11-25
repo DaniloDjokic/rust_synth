@@ -17,11 +17,11 @@ use self::{
 
 pub struct SampleGenerator {
     proc_clock: Arc<RwLock<f32>>,
-    clock: Clock,
+    clock: Arc<Clock>,
     time_step: f32,
     master_volume: f32,
     note_collection: NoteCollection,
-    instruments: Vec<Box<dyn Instrument + Send>>,
+    instruments: Vec<Arc<dyn Instrument + Send + Sync>>,
     input_receiver: Receiver<InputEventData>,
     performance_info_tx: Sender<LivePerformanceInfo>,
     note_info_tx: Sender<LiveNoteInfo>,
@@ -29,11 +29,11 @@ pub struct SampleGenerator {
 
 impl SampleGenerator {
     pub fn new(
-        clock: Clock,
+        clock: Arc<Clock>,
         sample_rate: u16, 
         performance_info_tx: Sender<LivePerformanceInfo>, 
         note_info_tx: Sender<LiveNoteInfo>,
-        instruments: Vec<Box<(dyn Instrument + Send)>>,
+        instruments: Vec<Arc<dyn Instrument + Send + Sync>>,
         listener: InputListener,
         input_receiver: Receiver<InputEventData>,
     ) -> Self {

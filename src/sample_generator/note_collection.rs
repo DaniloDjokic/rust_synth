@@ -30,7 +30,7 @@ impl PlayingNotes {
 
     pub fn note_pressed(&mut self, note: Note, sequence_time: f32) {
         let existing_note = self.notes.iter_mut()
-        .find(|n| n.scale_id == note.scale_id);
+        .find(|n| n.scale_id == note.scale_id && n.channel == note.channel);
 
         match existing_note {
             Some(existing_note) => PlayingNotes::refresh_same_note(existing_note, sequence_time),

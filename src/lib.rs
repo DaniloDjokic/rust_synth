@@ -6,7 +6,7 @@ pub mod input;
 mod channel;
 mod sequencer;
 
-use std::{thread, sync::{mpsc::{self, Receiver}, Arc}, io, io::Write, collections::HashMap };
+use std::{sync::{mpsc::{self, Receiver}, Arc, RwLock}, io, io::Write, collections::HashMap };
 
 use input::{input_listener::InputListener, clock::Clock};
 use sample_generator::{SampleGenerator, live_info::{LivePerformanceInfo, LiveNoteInfo}, instrument::Instrument};
@@ -15,7 +15,7 @@ use output_stream::OutputStream;
 use sequencer::Sequencer;
 
 pub fn run_synth() {
-    let clock = Arc::new(Clock::new());
+    let clock = Arc::new(RwLock::new(Clock::new()));
     let device = output_device::init_device();
     let supported_config = output_device::init_supported_config(&device);
 
@@ -33,7 +33,7 @@ pub fn run_synth() {
     );
 
     let instruments = instrument_loader::load_instruments();
-    init_sequencer(clock.clone(), &instruments);
+    let sequencer = init_sequencer(clock.clone(), &instruments);
 
     let generator = SampleGenerator::new(
         clock.clone(),
@@ -42,15 +42,16 @@ pub fn run_synth() {
         note_tx,
         instruments,
         input_listener,
-        input_rx
+        input_rx,
+        Some(sequencer)
     );
 
-    let _ = display_synth();
+    // let _ = display_synth();
 
-    thread::spawn(|| {
-        let _ = display_live_information(performance_rx, note_rx);
-        let _ = display_sequencer();
-    });
+    // thread::spawn(|| {
+    //     let _ = display_live_information(performance_rx, note_rx);
+    //     let _ = display_sequencer();
+    // });
 
     let _ = OutputStream::new(sample_format)
         .build(&device, &config, generator)
@@ -153,7 +154,7 @@ fn display_live_information(performance_rx: Receiver<LivePerformanceInfo>, note_
     }
 }
 
-fn init_sequencer(clock: Arc<Clock>, instruments: &Vec<Arc<dyn Instrument + Send + Sync>>) {
+fn init_sequencer(clock: Arc<RwLock<Clock>>, instruments: &Vec<Arc<dyn Instrument + Send + Sync>>) -> Sequencer {
     let mut sequencer = Sequencer::new(
         clock,
         90.0, 
@@ -168,9 +169,12 @@ fn init_sequencer(clock: Arc<Clock>, instruments: &Vec<Arc<dyn Instrument + Send
 
     for inst in instruments.clone() {
         let channel = inst.get_channel() as usize;
+        if channel == 3 { continue; } //CHANGE
         let beats = channel_sequence.get(&channel).unwrap();
-        sequencer.add_instrument(inst.clone(), String::from(*beats));
+        sequencer.add_instrument(channel, String::from(*beats));
     }    
+
+    sequencer
 }
 
 fn display_sequencer() {

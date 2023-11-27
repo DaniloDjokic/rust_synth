@@ -66,7 +66,8 @@ impl InputListener {
                 scale_id, 
                 Some(sequence_time),
                 None,
-                self.channel
+                self.channel,
+                None
             ))
         }
         else { 
@@ -82,7 +83,8 @@ impl InputListener {
                 scale_id, 
                 None,
                 Some(sequence_time),
-                self.channel
+                self.channel,
+                None
             ))
         } 
         else {

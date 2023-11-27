@@ -6,7 +6,7 @@ pub mod input;
 mod channel;
 mod sequencer;
 
-use std::{sync::{mpsc::{self, Receiver}, Arc, RwLock}, io, io::Write, collections::HashMap };
+use std::{sync::{mpsc::{self, Receiver}, Arc, RwLock}, io, io::Write, collections::HashMap, thread };
 
 use input::{input_listener::InputListener, clock::Clock};
 use sample_generator::{SampleGenerator, live_info::{LivePerformanceInfo, LiveNoteInfo}, instrument::Instrument};
@@ -46,12 +46,12 @@ pub fn run_synth() {
         Some(sequencer)
     );
 
-    // let _ = display_synth();
+    let _ = display_synth();
 
-    // thread::spawn(|| {
-    //     let _ = display_live_information(performance_rx, note_rx);
-    //     let _ = display_sequencer();
-    // });
+    thread::spawn(|| {
+        let _ = display_live_information(performance_rx, note_rx);
+        let _ = display_sequencer();
+    });
 
     let _ = OutputStream::new(sample_format)
         .build(&device, &config, generator)
@@ -163,7 +163,7 @@ fn init_sequencer(clock: Arc<RwLock<Clock>>, instruments: &Vec<Arc<dyn Instrumen
     );
 
     let channel_sequence = HashMap::from([
-        (1, "X...X...X..X.X.."),
+        (1, "X...X...X...X..."),
         (2, "..X...X...X...X."),
     ]);
 
@@ -171,7 +171,7 @@ fn init_sequencer(clock: Arc<RwLock<Clock>>, instruments: &Vec<Arc<dyn Instrumen
         let channel = inst.get_channel() as usize;
         if channel == 3 { continue; } //CHANGE
         let beats = channel_sequence.get(&channel).unwrap();
-        sequencer.add_instrument(channel, String::from(*beats));
+        sequencer.add_instrument(channel, String::from(*beats), Some(1.0));
     }    
 
     sequencer

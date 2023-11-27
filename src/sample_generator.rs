@@ -12,14 +12,14 @@ use self::{
         LivePerformanceInfo, 
         LiveNoteInfo
     }, 
-    note_collection::NoteCollection, 
+    note_collection::PlayingNotes, 
 };
 
 pub struct SampleGenerator {
     clock: Arc<RwLock<Clock>>,
     time_step: f32,
     master_volume: f32,
-    note_collection: NoteCollection,
+    note_collection: PlayingNotes,
     instruments: Vec<Arc<dyn Instrument + Send + Sync>>,
     input_receiver: Receiver<InputEventData>,
     performance_info_tx: Sender<LivePerformanceInfo>,
@@ -40,7 +40,7 @@ impl SampleGenerator {
     ) -> Self {
         let time_step = 1.0 / sample_rate as f32;
 
-        let note_collection = NoteCollection::new(clock.read().unwrap().proc_clock());
+        let note_collection = PlayingNotes::new(clock.read().unwrap().proc_clock());
 
         listener.start_listen(clock.read().unwrap().proc_clock());
 

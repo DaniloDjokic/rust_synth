@@ -7,16 +7,24 @@ pub struct Note {
     pub time_deactivated: Option<f32>,
     pub is_active: bool,
     pub channel: usize,
+    pub max_lifetime: Option<f32>,
 }
 
 impl Note {
-    pub fn new(scale_id: u32, time_activated: Option<f32>, time_deactivated: Option<f32>, channel: usize) -> Note {
+    pub fn new(
+        scale_id: u32, 
+        time_activated: Option<f32>, 
+        time_deactivated: Option<f32>, 
+        channel: usize,
+        max_lifetime: Option<f32>
+    ) -> Note {
         Self {
             scale_id,
             time_activated,
             time_deactivated,
             is_active: true,
-            channel: channel
+            channel: channel,
+            max_lifetime,
         }
     }
 

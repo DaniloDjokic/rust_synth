@@ -2,13 +2,13 @@ use std::sync::{Arc, RwLock};
 
 use super::{note::Note, instrument::Instrument};
 
-pub struct NoteCollection {
+pub struct PlayingNotes {
     notes: Vec<Note>,
     current_count: usize,
     clock: Arc<RwLock<f32>>,
 }
 
-impl NoteCollection {
+impl PlayingNotes {
     pub fn new(clock: Arc<RwLock<f32>>) -> Self {
         Self { 
             notes: vec![],
@@ -33,7 +33,7 @@ impl NoteCollection {
         .find(|n| n.scale_id == note.scale_id);
 
         match existing_note {
-            Some(existing_note) => NoteCollection::refresh_same_note(existing_note, sequence_time),
+            Some(existing_note) => PlayingNotes::refresh_same_note(existing_note, sequence_time),
             None => self.add_new_note(note, sequence_time)
         }
     }
@@ -70,11 +70,24 @@ impl NoteCollection {
             .collect::<Vec<&Arc<dyn Instrument + Send + Sync>>>();
 
             filtered_instruments.iter().for_each(|e| {
-                let sample = e.get_next_sample(*self.clock.read().unwrap(), note);
+                let time = *self.clock.read().unwrap();
+                let sample = e.get_next_sample(time, note);
 
                 match sample {
                     Some(sample) => next_sample += sample,
-                    None => if note.time_deactivated > note.time_activated { note.is_active = false }
+                    None => {
+                        if note.time_deactivated > note.time_activated { 
+                            note.is_active = false
+                        }
+
+                        if let Some(lifetime) = note.max_lifetime {
+                            if let Some(time_activated) = note.time_activated {
+                                if time_activated + time >= lifetime {
+                                    note.is_active = false;
+                                }
+                            }
+                        }
+                    } 
                 }
             });
         }

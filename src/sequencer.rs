@@ -24,8 +24,8 @@ impl Sequencer {
         }
     }
 
-    pub fn add_instrument(&mut self, channel_id: usize, instrument_sequence: String) {
-        let mut channel = Channel::new(channel_id);
+    pub fn add_instrument(&mut self, channel_id: usize, instrument_sequence: String, max_note_lifetime: Option<f32>) {
+        let mut channel = Channel::new(channel_id, max_note_lifetime);
         channel.set_beats(instrument_sequence);
         self.channels.push(channel);
     }
@@ -47,11 +47,12 @@ impl Sequencer {
                 if channel.is_beat_active(self.current_beat) {
                     self.notes.push(
                         Note { 
-                            scale_id: 64, 
+                            scale_id: 23, 
                             time_activated: Some(*self.clock.read().unwrap().proc_clock().read().unwrap()), 
                             time_deactivated: None, 
                             is_active: true, 
-                            channel: channel.channel_id() 
+                            channel: channel.channel_id(),
+                            max_lifetime: channel.max_note_lifetime()
                         }
                     )
                 }

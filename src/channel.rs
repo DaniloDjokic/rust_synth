@@ -1,13 +1,15 @@
 pub struct Channel {
     channel_id: usize,
     beat_line: String,
+    max_note_lifetime: Option<f32>,
 }
 
 impl Channel {
-    pub fn new(channel_id: usize) -> Self {
+    pub fn new(channel_id: usize, max_note_lifetime: Option<f32>) -> Self {
         Self {
             channel_id,
-            beat_line: String::from("")
+            beat_line: String::from(""),
+            max_note_lifetime,
         }
     }
 
@@ -17,6 +19,10 @@ impl Channel {
 
     pub fn channel_id(&self) -> usize {
         self.channel_id
+    }
+
+    pub fn max_note_lifetime(&self) -> Option<f32> {
+        self.max_note_lifetime
     }
 
     pub fn set_beats(&mut self, beat_line: String) {

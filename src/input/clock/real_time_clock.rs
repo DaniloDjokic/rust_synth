@@ -11,21 +11,21 @@ impl RealTimeClock {
     }
 
     pub fn real_time_elapsed(&mut self) -> f32 {
-        let elapsed = self.time_elapsed();
+        let elapsed = self.time_elapsed(self.last_timestamp);
         
         self.last_timestamp = SystemTime::now();
 
         elapsed
     }
 
-    fn time_elapsed(&self) -> f32 {
+    fn time_elapsed(&self, since: SystemTime) -> f32 {
         SystemTime::now()
-            .duration_since(self.last_timestamp)
+            .duration_since(since)
             .unwrap()
             .as_secs_f32()
     }
 
     pub fn total_real_time_elapsed(&self) -> f32 {
-        self.time_elapsed()
+        self.time_elapsed(self.start)
     }
 }

@@ -5,13 +5,12 @@ pub mod instrument;
 pub mod note;
 
 use std::sync::{mpsc::{Receiver, Sender}, Arc, RwLock};
-use crate::{input::{input_listener::{models::{InputEventData, InputEventType}, InputListener}, clock::{Clock, real_time_clock::RealTimeClock}, sequencer::Sequencer}, output::live_info::{LivePerformanceInfo, LiveNoteInfo}};
+use crate::{input::{input_listener::{models::{InputEventData, InputEventType}, InputListener}, clock::{Clock, real_time_clock::RealTimeClock, proc_clock::ProcClock}, sequencer::Sequencer}, output::live_info::{LivePerformanceInfo, LiveNoteInfo}};
 use self::{instrument::Instrument, active_notes::ActiveNotes};
 
 pub struct SampleGenerator {
-    proc_clock: Arc<RwLock<f32>>,
+    proc_clock: Arc<RwLock<ProcClock>>,
     real_time_clock: Arc<RwLock<RealTimeClock>>,
-    time_step: f32,
     master_volume: f32,
     note_collection: ActiveNotes,
     instruments: Vec<Arc<dyn Instrument + Send + Sync>>,
@@ -23,8 +22,7 @@ pub struct SampleGenerator {
 
 impl SampleGenerator {
     pub fn new(
-        clock: &Clock,
-        sample_rate: u16, 
+        clock: &Clock, 
         performance_info_tx: Sender<LivePerformanceInfo>, 
         note_info_tx: Sender<LiveNoteInfo>,
         instruments: Vec<Arc<dyn Instrument + Send + Sync>>,
@@ -32,17 +30,13 @@ impl SampleGenerator {
         input_receiver: Receiver<InputEventData>,
         sequencer: Option<Sequencer>
     ) -> Self {
-        let time_step = 1.0 / sample_rate as f32;
-
         let note_collection = ActiveNotes::new(clock.proc_clock());
-
         listener.start_listen(clock.proc_clock());
 
         Self { 
             proc_clock: clock.proc_clock(),
             real_time_clock: clock.real_time_clock(),
             master_volume: 0.2,
-            time_step, 
             note_collection,
             instruments,
             input_receiver, 
@@ -73,7 +67,7 @@ impl Iterator for SampleGenerator {
         if let Some(sequencer) = self.sequencer.as_mut() {
             let new_notes = sequencer.get_next_notes();
             for note in new_notes {
-                self.note_collection.note_pressed(note, *self.proc_clock.read().unwrap());
+                self.note_collection.note_pressed(note, self.proc_clock.read().unwrap().get_time());
             }
         }
 
@@ -85,12 +79,12 @@ impl Iterator for SampleGenerator {
 
         next_sample *= self.master_volume;
 
-        *self.proc_clock.write().unwrap() += self.time_step;
+        self.proc_clock.write().unwrap().tick();
         
         let real_time_passed = self.real_time_clock.read().unwrap().total_real_time_elapsed();
 
         let live_info = LivePerformanceInfo::new(
-            *self.proc_clock.read().unwrap(),
+            self.proc_clock.read().unwrap().get_time(),
             real_time_passed
         );
 

@@ -1,9 +1,9 @@
 use std::sync::{Arc, RwLock};
 use crate::sample_generator::note::Note;
-use super::{channel::Channel, clock::{real_time_clock::RealTimeClock, Clock}};
+use super::{channel::Channel, clock::{real_time_clock::RealTimeClock, Clock, proc_clock::ProcClock}};
 
 pub struct Sequencer {
-    proc_clock: Arc<RwLock<f32>>,
+    proc_clock: Arc<RwLock<ProcClock>>,
     real_time_clock: Arc<RwLock<RealTimeClock>>,
     beat_time: f32,
     current_beat: usize,
@@ -51,7 +51,7 @@ impl Sequencer {
                     self.notes.push(
                         Note { 
                             scale_id: 23, 
-                            time_activated: Some(*self.proc_clock.read().unwrap()), 
+                            time_activated: Some(self.proc_clock.read().unwrap().get_time()), 
                             time_deactivated: None, 
                             is_active: true, 
                             channel: channel.channel_id(),

@@ -1,15 +1,17 @@
 use std::sync::{Arc, RwLock};
 
+use crate::input::clock::proc_clock::ProcClock;
+
 use super::{note::Note, instrument::Instrument};
 
 pub struct ActiveNotes {
     notes: Vec<Note>,
     current_count: usize,
-    clock: Arc<RwLock<f32>>,
+    clock: Arc<RwLock<ProcClock>>,
 }
 
 impl ActiveNotes {
-    pub fn new(clock: Arc<RwLock<f32>>) -> Self {
+    pub fn new(clock: Arc<RwLock<ProcClock>>) -> Self {
         Self { 
             notes: vec![],
             current_count: 0, 
@@ -70,7 +72,7 @@ impl ActiveNotes {
             .collect::<Vec<&Arc<dyn Instrument + Send + Sync>>>();
 
             filtered_instruments.iter().for_each(|e| {
-                let time = *self.clock.read().unwrap();
+                let time = self.clock.read().unwrap().get_time();
                 let sample = e.get_next_sample(time, note);
 
                 match sample {

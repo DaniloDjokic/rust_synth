@@ -13,12 +13,13 @@ mod initialization;
 
 
 pub fn run_synth() {
-    let clock = Clock::new();
     let device = output_device::init_device();
     let supported_config = output_device::init_supported_config(&device);
 
     let sample_format = supported_config.sample_format();
     let config = supported_config.config();
+
+    let clock = Clock::new(config.sample_rate.0);
 
     let (performance_tx, performance_rx) = mpsc::channel();
     let (note_tx, note_rx) = mpsc::channel();
@@ -35,7 +36,6 @@ pub fn run_synth() {
 
     let generator = SampleGenerator::new(
         &clock,
-        config.sample_rate.0 as u16,
         performance_tx,
         note_tx,
         instruments,

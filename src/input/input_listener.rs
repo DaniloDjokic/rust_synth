@@ -9,6 +9,8 @@ use crate::sample_generator::note::scale_config::get_scale_id_for_key;
 
 use self::models::{InputEventData, InputEventType};
 
+use super::clock::proc_clock::ProcClock;
+
 pub struct InputListener {
     sender: SyncSender<InputEventData>,
     channel: usize,
@@ -22,7 +24,7 @@ impl InputListener {
         Self { sender, channel }
     }
 
-    pub fn start_listen(self, clock: Arc<RwLock<f32>>) -> JoinHandle<()> {
+    pub fn start_listen(self, clock: Arc<RwLock<ProcClock>>) -> JoinHandle<()> {
         thread::spawn(move || {
             let (tx, rx) = mpsc::channel();
             io_listener::io_listen(tx, clock);

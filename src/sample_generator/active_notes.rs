@@ -2,13 +2,13 @@ use std::sync::{Arc, RwLock};
 
 use super::{note::Note, instrument::Instrument};
 
-pub struct PlayingNotes {
+pub struct ActiveNotes {
     notes: Vec<Note>,
     current_count: usize,
     clock: Arc<RwLock<f32>>,
 }
 
-impl PlayingNotes {
+impl ActiveNotes {
     pub fn new(clock: Arc<RwLock<f32>>) -> Self {
         Self { 
             notes: vec![],
@@ -33,7 +33,7 @@ impl PlayingNotes {
         .find(|n| n.scale_id == note.scale_id && n.channel == note.channel);
 
         match existing_note {
-            Some(existing_note) => PlayingNotes::refresh_same_note(existing_note, sequence_time),
+            Some(existing_note) => ActiveNotes::refresh_same_note(existing_note, sequence_time),
             None => self.add_new_note(note, sequence_time)
         }
     }

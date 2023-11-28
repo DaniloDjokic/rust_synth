@@ -1,21 +1,19 @@
-mod output_device;
-mod output_stream;
-mod instrument_loader;
+use std::{sync::{Arc, mpsc::{self, Receiver}}, thread, collections::HashMap, io::{self, Write}};
+
+use crossterm::{execute, style::Print, cursor, queue, terminal::Clear};
+use initialization::instrument_loader;
+use input::{clock::Clock, input_listener::InputListener, sequencer::Sequencer};
+use output::{output_device, output_stream::OutputStream, live_info::{LivePerformanceInfo, LiveNoteInfo}};
+use sample_generator::{SampleGenerator, instrument::Instrument};
+
 mod sample_generator;
-pub mod input;
-mod channel;
-mod sequencer;
+mod input;
+mod output;
+mod initialization;
 
-use std::{sync::{mpsc::{self, Receiver}, Arc, RwLock}, io, io::Write, collections::HashMap, thread };
-
-use input::{input_listener::InputListener, clock::Clock};
-use sample_generator::{SampleGenerator, live_info::{LivePerformanceInfo, LiveNoteInfo}, instrument::Instrument};
-use crossterm::{queue, execute, style::Print, cursor, terminal::Clear};
-use output_stream::OutputStream;
-use sequencer::Sequencer;
 
 pub fn run_synth() {
-    let clock = Arc::new(RwLock::new(Clock::new()));
+    let clock = Clock::new();
     let device = output_device::init_device();
     let supported_config = output_device::init_supported_config(&device);
 
@@ -33,10 +31,10 @@ pub fn run_synth() {
     );
 
     let instruments = instrument_loader::load_instruments();
-    let sequencer = init_sequencer(clock.clone(), &instruments);
+    let sequencer = init_sequencer(&clock, &instruments);
 
     let generator = SampleGenerator::new(
-        clock.clone(),
+        &clock,
         config.sample_rate.0 as u16,
         performance_tx,
         note_tx,
@@ -154,7 +152,7 @@ fn display_live_information(performance_rx: Receiver<LivePerformanceInfo>, note_
     }
 }
 
-fn init_sequencer(clock: Arc<RwLock<Clock>>, instruments: &Vec<Arc<dyn Instrument + Send + Sync>>) -> Sequencer {
+fn init_sequencer(clock: &Clock, instruments: &Vec<Arc<dyn Instrument + Send + Sync>>) -> Sequencer {
     let mut sequencer = Sequencer::new(
         clock,
         90.0, 

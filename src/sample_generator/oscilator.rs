@@ -3,15 +3,8 @@ pub mod lfo;
 
 use lfo::LFO;
 
-use helpers::{
-    Radian, 
-    SQUARE_WAVE_AMPLITUDE_FACTOR, 
-    TRIANGLE_WAVE_AMPLITUDE_FACTOR,
-    SAW_WAVE_AMPLITUDE_FACTOR
-};
+use helpers::Radian;
 use rand::{Rng, rngs::StdRng, SeedableRng};
-
-use self::helpers::NOISE_AMPLITUDE_FACTOR;
 
 pub enum Oscilator {
     Sine,
@@ -53,37 +46,37 @@ fn calc_square_wave_sample(freq: f32) -> f32 {
     let sine = osc_sine(freq, 1.0);
 
         if sine > 0.0 { 
-            SQUARE_WAVE_AMPLITUDE_FACTOR 
+            1.0
         } 
         else { 
-            SQUARE_WAVE_AMPLITUDE_FACTOR 
+            -1.0 
         }
 }
 
 fn calc_triangle_wave_sample(freq: f32) -> f32 {
     let sine = osc_sine(freq, 1.0);
 
-    sine.asin() * TRIANGLE_WAVE_AMPLITUDE_FACTOR
+    sine.asin() * (2.0 / std::f32::consts::PI)
 }
 
 fn calc_analog_saw_wave_sample(freq: f32, factor: u32) -> f32 {
     let mut output = 0.0;
 
-        for i in 1..=factor {
-            output += osc_sine(freq, i as f32) / i as f32;
-        };
-    
-       output * SAW_WAVE_AMPLITUDE_FACTOR
+    for i in 1..=factor {
+        output += osc_sine(freq, i as f32) / i as f32;
+    };
+
+    output * (2.0 / std::f32::consts::PI)
 }
 
 fn calc_digital_saw_wave_sample(time: f32, hz: f32) -> f32 {
     let value_mod = hz * std::f32::consts::PI * (time % (1.0 / hz));
 
-    SAW_WAVE_AMPLITUDE_FACTOR * value_mod - SAW_WAVE_AMPLITUDE_FACTOR
+    (2.0 / std::f32::consts::PI) * (value_mod - (2.0 / std::f32::consts::PI))
 }
 
 fn calc_noise_sample<R: Rng>(mut rng: R) -> f32 {
-    NOISE_AMPLITUDE_FACTOR * ((rng.gen::<f32>() / 1.0) - 1.0) 
+    2.0 * ((rng.gen::<f32>() / 1.0) - 1.0) 
 }
 
 fn osc_sine(freq: f32, factor: f32) -> f32 {

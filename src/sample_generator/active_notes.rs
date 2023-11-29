@@ -84,7 +84,7 @@ impl ActiveNotes {
 
                         if let Some(lifetime) = note.max_lifetime {
                             if let Some(time_activated) = note.time_activated {
-                                if time_activated + time >= lifetime {
+                                if time - time_activated >= lifetime {
                                     note.is_active = false;
                                 }
                             }

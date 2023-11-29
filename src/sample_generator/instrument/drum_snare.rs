@@ -13,21 +13,21 @@ unsafe impl Send for DrumSnare {}
 impl DrumSnare {
     pub fn new(channel: usize) -> Self {
         let env = ADSREnvelope::new(
-            0.0,
-            0.15,
-            0.1,
+            0.01,
+            0.2,
+            0.01,
             1.0,
             0.0
         );
 
         let oscillators = vec![
-            InstrumentOscilator::new(Oscilator::Sine, 0.1, 12, Some(LFO::new(0.5, 1.0))),
-            InstrumentOscilator::new(Oscilator::Noise, 0.9, 1, None)
+            InstrumentOscilator::new(Oscilator::Sine, 0.5, 2, Some(LFO::new(0.5, 1.0))),
+            InstrumentOscilator::new(Oscilator::Noise, 0.5, 1, None)
         ];
 
         Self {
             envelope: env,
-            volume: 0.8,
+            volume: 0.4,
             channel: channel,
             oscillators: oscillators  
         }

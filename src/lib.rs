@@ -155,7 +155,7 @@ fn display_live_information(performance_rx: Receiver<LivePerformanceInfo>, note_
 fn init_sequencer(clock: &Clock, instruments: &Vec<Arc<dyn Instrument + Send + Sync>>) -> Sequencer {
     let mut sequencer = Sequencer::new(
         clock,
-        90.0, 
+        100.0, 
         4, 
         4
     );
@@ -168,8 +168,8 @@ fn init_sequencer(clock: &Clock, instruments: &Vec<Arc<dyn Instrument + Send + S
     for inst in instruments.clone() {
         let channel = inst.get_channel() as usize;
         if channel == 3 { continue; } //CHANGE
-        let beats = channel_sequence.get(&channel).unwrap();
-        sequencer.add_instrument(channel, String::from(*beats), Some(1.0));
+        let beats = channel_sequence.get(&channel).unwrap();                            //Max lifetime must be calculated based on tempo
+        sequencer.add_instrument(channel, String::from(*beats), Some(0.2)); 
     }    
 
     sequencer

@@ -14,6 +14,6 @@ impl LFO {
     }
 
     pub fn get_lfo_frequency(&self, time: f32) -> f32 {
-        self.amplitude * self.hz * (self.hz * time).to_rad().sin()
+        self.amplitude * self.hz * ((self.hz.to_rad() * time).sin())
     }
 }

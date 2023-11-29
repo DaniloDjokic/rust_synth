@@ -13,21 +13,21 @@ unsafe impl Send for DrumKick {}
 impl DrumKick {
     pub fn new(channel: usize) -> Self {
         let env = ADSREnvelope::new(
-            0.0,
+            0.01,
             0.15,
-            0.1,
+            0.01,
             1.0,
             0.0
         );
 
         let oscillators = vec![
-            InstrumentOscilator::new(Oscilator::Sine, 0.98, 1, Some(LFO::new(1.0, 1.0))),
-            InstrumentOscilator::new(Oscilator::Noise, 0.02, 1, None)
+            InstrumentOscilator::new(Oscilator::Sine, 0.99, 1, Some(LFO::new(1.0, 1.0))),
+            InstrumentOscilator::new(Oscilator::Noise, 0.01, 0, None)
         ];
 
         Self {
             envelope: env,
-            volume: 0.8,
+            volume: 3.5,
             channel: channel,
             oscillators: oscillators  
         }

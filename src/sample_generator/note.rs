@@ -31,8 +31,4 @@ impl Note {
     pub fn get_frequency(&self, octave: u32) -> f32 {
         scale_config::get_note_frequency(&self, octave)
     }
-
-    pub fn get_base_frequency(&self) -> f32 {
-        scale_config::get_note_frequency(&self, 1)
-    }
 }
